@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import sys
+import re
 from PyQt4 import QtCore, QtGui
 
 class MainWindow(QtGui.QMainWindow):
@@ -17,6 +18,9 @@ class MainWindow(QtGui.QMainWindow):
 
         self.createMenuItem('Open', 'icons/open.png', 'Ctrl+O',
             'Open a CSV', self.open_csv, file)
+
+        self.createMenuItem('Import from html', 'icons/import_html.png',
+            'Ctrl+I', 'Import from html file', self.import_html, file)
 
         self.createMenuItem('Save', 'icons/save.png', 'Ctrl+S',
             'Save as CSV', self.save, file)
@@ -90,6 +94,32 @@ class MainWindow(QtGui.QMainWindow):
         word1, word2 = lines[index][1:-2].split('", "')
         self.input_boxes[index][0].setText(word1)
         self.input_boxes[index][1].setText(word2)
+
+    def parse_html(self, filename):
+      with open(filename) as f:
+        lines = f.readlines()
+
+      lines = lines[17:-3]
+
+      french_words = [re.sub('\s*<td>(.*)</td>\s*$', '\\1', _)
+          for _ in lines[1::4]]
+      bulgarian_words = [re.sub('\s*<td>(.*)</td>\s*$', '\\1', _)
+          for _ in lines[2::4]]
+
+      return list(zip(french_words, bulgarian_words))
+
+    def import_html(self):
+      filename = QtGui.QFileDialog.getOpenFileName(self,
+          self.tr("Import from html file"), "", "Files (*.html *.xhtml)")
+
+      if filename == '': 
+        return
+
+      word_pairs = self.parse_html(filename)
+
+      for index in range(len(word_pairs)):
+        self.input_boxes[index][0].setText(word_pairs[index][0])
+        self.input_boxes[index][1].setText(word_pairs[index][1])
 
     def save(self):
       result = []
