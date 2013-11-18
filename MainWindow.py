@@ -93,10 +93,6 @@ class MainWindow(QtGui.QMainWindow):
             'Download free audio files from other url',
             self.download_audios_custom_url, tools)
         
-#        edit = menubar.addMenu('&Edit')
-#        print(dir(self.translation))
-#        self.createMenuItem('Copy', 'icons/copy.png', 'Ctrl+C', 'Copy selected text', lambda : self.emit(QtCore.SIGNAL('copy()')), edit)
-
         scrollableArea = QtGui.QScrollArea(self)
         self.setCentralWidget(scrollableArea)
         frame = QtGui.QFrame()
@@ -108,12 +104,6 @@ class MainWindow(QtGui.QMainWindow):
 
         layout.addRow(self.tr('Francais'), QtGui.QLabel('Bulgare'))
         self.createInputBoxes(layout, 100)
-
-#       connects signal with their handlers
-        #self.connect(self.definition, QtCore.SIGNAL('currentChanged(QString)'), self.update_definition) 
-        #self.connect(self.translation, QtCore.SIGNAL('currentChanged(QString)'), self.update_translation)
-        #self.connect(self.buttonGo, QtCore.SIGNAL('clicked()'), self.look_for_word)
-        #self.connect(self.entry, QtCore.SIGNAL('returnPressed()'),self.look_for_word) 
 
         self.center()
         self.show()
@@ -257,6 +247,9 @@ class ZipFileDownloader(QtCore.QRunnable):
     self._download_file(self.url, result_filename)
     self._unpack_file_to_dir(result_filename)
 
+  def _tr(self, text):
+    return QtCore.QCoreApplication.translate("ZipFileDownloader", text)
+
   def _download_file(self, url, result_filename):
     read_size = 65507
 
@@ -273,25 +266,19 @@ class ZipFileDownloader(QtCore.QRunnable):
           downloaded += len(buf)
 
           self.executionStatus.newValue.emit(
-              QtCore.QCoreApplication.translate("ZipFileDownloader",
-                "Downloaded {} KB of {} KB".format(downloaded // 1024,
+              self._tr("Downloaded {} KB of {} KB".format(downloaded // 1024,
                   file_size // 1024)), 0)
 
-    self.executionStatus.newValue.emit(
-        QtCore.QCoreApplication.translate("ZipFileDownloader",
-          "Download completed"), 10000)
+    self.executionStatus.newValue.emit(self._tr("Download completed"), 10000)
 
   def _unpack_file_to_dir(self, result_filename):
     self.executionStatus.newValue.emit(
-        QtCore.QCoreApplication.translate("ZipFileDownloader",
-          "Unpacking files, please wait"), 0)
+        self._tr("Unpacking files, please wait"), 0)
 
     with zipfile.ZipFile(result_filename) as zf:
       zf.extractall(self.dirname)
 
-    self.executionStatus.newValue.emit(
-        QtCore.QCoreApplication.translate("ZipFileDownloader",
-          "Unpacking finished"), 10000)
+    self.executionStatus.newValue.emit(self._tr("Unpacking finished"), 10000)
 
 class KvtmlConvertorDialog(QtGui.QDialog):
   def __init__(self, words, parent=None):
