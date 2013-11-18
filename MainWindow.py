@@ -4,6 +4,9 @@ import sys
 import re
 import time
 import os
+import urllib.request
+import uuid
+import zipfile
 from PyQt4 import QtCore, QtGui
 
 # Templates part
@@ -53,6 +56,10 @@ class MainWindow(QtGui.QMainWindow):
         super(MainWindow, self).__init__()
         self.resize(440, 360)
         self.setWindowTitle('Word Learning Helper')
+        self.statusBar()
+
+        self.pool = QtCore.QThreadPool()
+        self.pool.setMaxThreadCount(5)
 
 #       creates the menuBar and the menu entries
         menubar = self.menuBar()
@@ -76,6 +83,16 @@ class MainWindow(QtGui.QMainWindow):
         self.createMenuItem('Exit', 'icons/exit.png', 'Ctrl+Q',
             'Exit application', QtCore.SLOT('close()'), file_menu)
 
+        tools = menubar.addMenu('&Tools')
+        self.createMenuItem('Download audio files', 'icons/download_audios.png',
+            'Ctrl+D', 'Download free audio files', self.download_audios,
+            tools)
+
+        self.createMenuItem('Download audio files from url',
+            'icons/download_audios.png', 'Ctrl+C',
+            'Download free audio files from other url',
+            self.download_audios_custom_url, tools)
+        
 #        edit = menubar.addMenu('&Edit')
 #        print(dir(self.translation))
 #        self.createMenuItem('Copy', 'icons/copy.png', 'Ctrl+C', 'Copy selected text', lambda : self.emit(QtCore.SIGNAL('copy()')), edit)
@@ -193,6 +210,89 @@ class MainWindow(QtGui.QMainWindow):
 
       print("Successfully wrote words to {0}".format(filename))
 
+
+    def download_audios(self,
+        url = 'https://docs.google.com/uc?export=download&id=0B4itASCdgeQKbVdFVVQxeGh6UU0'): 
+      dirname = QtGui.QFileDialog.getExistingDirectory(self,
+          self.tr("Directory for the sounds"))
+      
+      if dirname == '': 
+        return
+
+      result_filename = "{0}/{1}.zip".format(dirname, uuid.uuid4().hex)
+
+      self.statusBar().showMessage(self.tr("Connecting to the server"))
+      zipFileDownloader = ZipFileDownloader(url, dirname)
+      zipFileDownloader.executionStatus.newValue.connect(
+          self.updateStatusBarWithTimeout)
+
+      self.pool.start(zipFileDownloader)
+
+    @QtCore.pyqtSlot(str, int)
+    def updateStatusBarWithTimeout(self, message, timeout=0):
+      self.statusBar().showMessage(message)
+
+    def download_audios_custom_url(self):
+      url = QtGui.QInputDialog.getText(self, self.tr("Url"),
+          self.tr("The url to use for audio files"))
+
+      if url == '':
+        QtGui.QMessageBox(self.tr("Aborting as no url was provided"))
+
+      self.download_audios(url)
+
+class ExecutionStatus(QtCore.QObject):
+  newValue = QtCore.pyqtSignal(str, int)
+
+class ZipFileDownloader(QtCore.QRunnable):
+
+  def __init__(self, url, dirname, parent=None):
+    super(ZipFileDownloader, self).__init__()
+    self.executionStatus = ExecutionStatus()
+    self.url = url
+    self.dirname = dirname
+
+  def run(self): 
+    result_filename = "{0}/{1}.zip".format(self.dirname, uuid.uuid4().hex)
+    self._download_file(self.url, result_filename)
+    self._unpack_file_to_dir(result_filename)
+
+  def _download_file(self, url, result_filename):
+    read_size = 65507
+
+    with urllib.request.urlopen(url) as web_file:
+      file_size = int(web_file.info()['Content-Length'])
+      downloaded = 0
+      with open(result_filename, 'wb') as fout:
+        while(True):
+          buf = web_file.read(read_size)
+          if not buf:
+            break
+
+          fout.write(buf)
+          downloaded += len(buf)
+
+          self.executionStatus.newValue.emit(
+              QtCore.QCoreApplication.translate("ZipFileDownloader",
+                "Downloaded {} KB of {} KB".format(downloaded // 1024,
+                  file_size // 1024)), 0)
+
+    self.executionStatus.newValue.emit(
+        QtCore.QCoreApplication.translate("ZipFileDownloader",
+          "Download completed"), 10000)
+
+  def _unpack_file_to_dir(self, result_filename):
+    self.executionStatus.newValue.emit(
+        QtCore.QCoreApplication.translate("ZipFileDownloader",
+          "Unpacking files, please wait"), 0)
+
+    with zipfile.ZipFile(result_filename) as zf:
+      zf.extractall(self.dirname)
+
+    self.executionStatus.newValue.emit(
+        QtCore.QCoreApplication.translate("ZipFileDownloader",
+          "Unpacking finished"), 10000)
+
 class KvtmlConvertorDialog(QtGui.QDialog):
   def __init__(self, words, parent=None):
     super(KvtmlConvertorDialog, self).__init__(parent)
@@ -250,8 +350,6 @@ class KvtmlConvertorDialog(QtGui.QDialog):
         self.tr("The words were successfully saved to {0}").format(
           result_filename))
     self.accept()
-    
-    
 
   def has_common_word(self, phrase, audio):
     skip_words = ['une', 'un', 'le', 'la', 'les', 'de', 'des', 'du', 'se', 'e',
@@ -292,31 +390,6 @@ class KvtmlConvertorDialog(QtGui.QDialog):
       return None
 
     return option_to_use[0]
-
-    #while(True):
-    #  print("\nSelect the correct match for '{0}' or hit q<Enter> to exit".format(
-    #    phrase))
-    #  for _ in range(options_count):
-    #    print("{0}) {1}".format(_, partial_match[_]))
-    #  answer = sys.stdin.readline().strip()
-
-    #  if answer == 'q':
-    #    return None
-
-    #  if answer == '':
-    #    print("Selected partial match for {0}".format(phrase))
-    #    return basedir + partial_match[0]
-
-    #  if not answer.isdecimal():
-    #    print("Incorrect input")
-    #    continue
-
-    #  answer = int(answer)
-    #  if answer >= 0 and answer < options_count:
-    #    print("Selected partial match for {0}".format(phrase))
-    #    return basedir + partial_match[_]
-    #  else:
-    #    print("This option is not available")
 
   def map_audio_files(self):
     files = os.listdir(self.sound_directory.text())
