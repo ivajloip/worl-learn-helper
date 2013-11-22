@@ -9,12 +9,14 @@ import uuid
 import zipfile
 from PyQt4 import QtCore, QtGui
 
+STATUS_BAR_TIMEOUT = 10000
+
 # Templates part
 TEMPLATE_CSV = '"{word1}", "{word2}"\n'
 
 TEMPLATE_SOUND = '\n        <sound>file://{sound}</sound>'
 
-TEMPLATE_ENTRY = """    <entry id="{index}">
+TEMPLATE_KVTML_ENTRY = """    <entry id="{index}">
       <translation id="0">{sound1}
         <text>{word}</text>
       </translation>
@@ -46,190 +48,245 @@ TEMPLATE_KVTML = """<?xml version="1.0" encoding="UTF-8"?>
   </entries>
 </kvtml>
 """
+
+TEMPLATE_HTML_ROW = """      <tr>
+        <td>{word}</td>
+        <td>{translation}</td>
+      </tr>"""
+
+TEMPLATE_HTML = """<?xml version='1.0' encoding='utf-8'?>
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <title>{title}</title>
+    <style type="text/css">
+      td {{padding-left: 1em;}}
+      th {{padding-left: 1em;}}
+    </style>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  </head>
+  <body style="width:100%">
+    <h1 style="text-align:center; width:90%;">{title}</h1>
+    <table style="width:90%; border-collapse:collapse;" border="1">
+      <tr>
+        <th style="text-align:left; width:49%;">français</th>
+        <th style="text-align:left; width:49%;">bulgare</th>
+      </tr>
+{entries}
+  </body>
+
+</html>
+"""
 # end of teplates
 
 
 class MainWindow(QtGui.QMainWindow):
 
-    def __init__(self, use_local = True):
+  def __init__(self, use_local = True):
 #       creates the window with the title and icon
-        super(MainWindow, self).__init__()
-        self.resize(440, 360)
-        self.setWindowTitle('Word Learning Helper')
-        self.statusBar()
+    super(MainWindow, self).__init__()
+    self.resize(450, 360)
+    self.setWindowTitle('Word Learning Helper')
+    self.statusBar()
 
-        self.pool = QtCore.QThreadPool()
-        self.pool.setMaxThreadCount(5)
+    self.pool = QtCore.QThreadPool()
+    self.pool.setMaxThreadCount(5)
 
 #       creates the menuBar and the menu entries
-        menubar = self.menuBar()
-        file_menu = menubar.addMenu('&File')
+    menubar = self.menuBar()
+    file_menu = menubar.addMenu('&File')
 
-        self.createMenuItem('Open', 'icons/open.png', 'Ctrl+O',
-            'Open a CSV', self.open_csv, file_menu)
+    self.createMenuItem('Open', 'icons/open.png', 'Ctrl+O',
+        'Open a CSV', self.open_csv, file_menu)
 
-        self.createMenuItem('Import from html', 'icons/import_html.png',
-            'Ctrl+I', 'Import from html file', self.import_html, file_menu)
+    self.createMenuItem('Import from html', 'icons/import_html.png',
+        'Ctrl+I', 'Import from html file', self.import_html, file_menu)
 
-        self.createMenuItem('Save', 'icons/save.png', 'Ctrl+S',
-            'Save as CSV', self.save, file_menu)
+    self.createMenuItem('Save', 'icons/save.png', 'Ctrl+S',
+        'Save as CSV', self.save, file_menu)
 
-        export = file_menu.addMenu('&Export')
-        self.createMenuItem('Export to kvtml', 'icons/export_kvtml.png',
-            'Ctrl+K', 'Export to wordquiz/kwordquiz file', self.export_kvtml,
-            export)
+    export = file_menu.addMenu('&Export')
+    self.createMenuItem('Export to kvtml', 'icons/export_kvtml.png',
+        'Ctrl+K', 'Export to wordquiz/kwordquiz file', self.export_kvtml,
+        export)
 
-        file_menu.addSeparator()
-        self.createMenuItem('Exit', 'icons/exit.png', 'Ctrl+Q',
-            'Exit application', QtCore.SLOT('close()'), file_menu)
+    export = file_menu.addMenu('&Export')
+    self.createMenuItem('Export to html', 'icons/export_html.png',
+        'Ctrl+H', 'Export to html file', self.export_html, export)
 
-        tools = menubar.addMenu('&Tools')
-        self.createMenuItem('Download audio files', 'icons/download_audios.png',
-            'Ctrl+D', 'Download free audio files', self.download_audios,
-            tools)
+    file_menu.addSeparator()
+    self.createMenuItem('Exit', 'icons/exit.png', 'Ctrl+Q',
+        'Exit application', QtCore.SLOT('close()'), file_menu)
 
-        self.createMenuItem('Download audio files from url',
-            'icons/download_audios.png', 'Ctrl+C',
-            'Download free audio files from other url',
-            self.download_audios_custom_url, tools)
-        
-        scrollableArea = QtGui.QScrollArea(self)
-        self.setCentralWidget(scrollableArea)
-        frame = QtGui.QFrame()
-        scrollableArea.setWidget(frame)
+    tools = menubar.addMenu('&Tools')
+    self.createMenuItem('Download audio files', 'icons/download_audios.png',
+        'Ctrl+D', 'Download free audio files', self.download_audios,
+        tools)
 
-        layout = QtGui.QFormLayout()
-        frame.setLayout(layout)
-        layout.setSizeConstraint(QtGui.QLayout.SetMinimumSize)
+    self.createMenuItem('Download audio files from url',
+        'icons/download_audios.png', 'Ctrl+C',
+        'Download free audio files from other url',
+        self.download_audios_custom_url, tools)
+    
+    scrollableArea = QtGui.QScrollArea(self)
+    self.setCentralWidget(scrollableArea)
+    frame = QtGui.QFrame()
+    scrollableArea.setWidget(frame)
 
-        layout.addRow(self.tr('Francais'), QtGui.QLabel('Bulgare'))
-        self.createInputBoxes(layout, 100)
+    layout = QtGui.QFormLayout()
+    frame.setLayout(layout)
+    layout.setSizeConstraint(QtGui.QLayout.SetMinimumSize)
 
-        self.center()
-        self.show()
+    layout.addRow(self.tr('Francais'), QtGui.QLabel('Bulgare'))
+    self.createInputBoxes(layout, 100)
 
-    def createMenuItem(self, label, iconLocation, shortCut, statusTip, func, addTo):
-        tmp = QtGui.QAction(QtGui.QIcon(iconLocation), label, self)
-        tmp.setShortcut(shortCut)
-        tmp.setStatusTip(statusTip)
-        self.connect(tmp, QtCore.SIGNAL('triggered()'), func)
-        addTo.addAction(tmp)       
+    self.center()
+    self.show()
 
-    def center(self):
-        screen = QtGui.QDesktopWidget().screenGeometry()
-        size =  self.geometry()
-        self.move((screen.width()-size.width())/2, (screen.height()-size.height())/2)  
+  def createMenuItem(self, label, iconLocation, shortCut, statusTip, func, addTo):
+    tmp = QtGui.QAction(QtGui.QIcon(iconLocation), label, self)
+    tmp.setShortcut(shortCut)
+    tmp.setStatusTip(statusTip)
+    self.connect(tmp, QtCore.SIGNAL('triggered()'), func)
+    addTo.addAction(tmp)       
 
-    def createInputBox(self, layout):
-      word1 = QtGui.QLineEdit(self)
-      word1.setMinimumWidth(200)
-      word2 = QtGui.QLineEdit(self)
-      word2.setMinimumWidth(200)
-      layout.addRow(word1, word2)
+  def center(self):
+    screen = QtGui.QDesktopWidget().screenGeometry()
+    size =  self.geometry()
+    self.move((screen.width()-size.width())/2, (screen.height()-size.height())/2)  
 
-      return (word1, word2)
+  def createInputBox(self, layout):
+    word1 = QtGui.QLineEdit(self)
+    word1.setMinimumWidth(200)
+    word2 = QtGui.QLineEdit(self)
+    word2.setMinimumWidth(200)
+    layout.addRow(word1, word2)
 
-    def createInputBoxes(self, layout, count):
-      self.input_boxes = []
-      for _ in range(count):
-        input_box = self.createInputBox(layout)
-        self.input_boxes.append(input_box)
+    return (word1, word2)
 
-    def open_csv(self):
-      filename = QtGui.QFileDialog.getOpenFileName(self, self.tr("Open file"),
-          "", "Files (*.*)")
+  def createInputBoxes(self, layout, count):
+    self.input_boxes = []
+    for _ in range(count):
+      input_box = self.createInputBox(layout)
+      self.input_boxes.append(input_box)
 
-      if filename == '': 
-        return
+  def open_csv(self):
+    filename = QtGui.QFileDialog.getOpenFileName(self, self.tr("Open file"),
+        "", "Files (*.*)")
 
-      with open(filename) as fin:
-        lines = fin.readlines()
+    if filename == '': 
+      return
 
-      for index in range(len(lines)):
-        word1, word2 = lines[index][1:-2].split('", "')
-        self.input_boxes[index][0].setText(word1)
-        self.input_boxes[index][1].setText(word2)
+    with open(filename) as fin:
+      lines = fin.readlines()
 
-    def parse_html(self, filename):
-      with open(filename) as f:
-        lines = f.readlines()
+    for index in range(len(lines)):
+      word1, word2 = lines[index][1:-2].split('", "')
+      self.input_boxes[index][0].setText(word1)
+      self.input_boxes[index][1].setText(word2)
 
-      lines = lines[17:-3]
+  def parse_html(self, filename):
+    with open(filename) as f:
+      lines = f.readlines()
 
-      french_words = [re.sub('\s*<td>(.*)</td>\s*$', '\\1', _)
-          for _ in lines[1::4]]
-      bulgarian_words = [re.sub('\s*<td>(.*)</td>\s*$', '\\1', _)
-          for _ in lines[2::4]]
+    lines = lines[17:-3]
 
-      return list(zip(french_words, bulgarian_words))
+    french_words = [re.sub('\s*<td>(.*)</td>\s*$', '\\1', _)
+        for _ in lines[1::4]]
+    bulgarian_words = [re.sub('\s*<td>(.*)</td>\s*$', '\\1', _)
+        for _ in lines[2::4]]
 
-    def import_html(self):
-      filename = QtGui.QFileDialog.getOpenFileName(self,
-          self.tr("Import from html file"), "", "Files (*.html *.xhtml)")
+    return list(zip(french_words, bulgarian_words))
 
-      if filename == '': 
-        return
+  def import_html(self):
+    filename = QtGui.QFileDialog.getOpenFileName(self,
+        self.tr("Import from html file"), "", "Files (*.html *.xhtml)")
 
-      word_pairs = self.parse_html(filename)
+    if filename == '': 
+      return
 
-      for index in range(len(word_pairs)):
-        self.input_boxes[index][0].setText(word_pairs[index][0])
-        self.input_boxes[index][1].setText(word_pairs[index][1])
+    word_pairs = self.parse_html(filename)
 
-    def export_kvtml(self):
-      result = [(words[0].text(), words[1].text()) 
-          for words in self.input_boxes
-          if words[0].text() != '' and words[1].text != '']
-      converterDialog = KvtmlConvertorDialog(result, self)
-      converterDialog.exec_()
+    for index in range(len(word_pairs)):
+      self.input_boxes[index][0].setText(word_pairs[index][0])
+      self.input_boxes[index][1].setText(word_pairs[index][1])
 
-    def save(self):
-      result = [TEMPLATE_CSV.format(word1 = words[0].text(),
-        word2 = words[1].text()) 
+  def _get_words(self):
+    return [(words[0].text(), words[1].text()) 
         for words in self.input_boxes
         if words[0].text() != '' and words[1].text != '']
 
-      filename = QtGui.QFileDialog.getSaveFileName(self, self.tr("Save file"),
-          "", "Files (*.*)")
-      
-      if filename == '': 
-        return
+  def export_kvtml(self):
+    words = self._get_words()
+    converterDialog = KvtmlConvertorDialog(words, self)
+    converterDialog.exec_()
 
-      with open(filename, 'w') as f:
-        f.writelines(result)
+  def export_html(self):
+    filename = QtGui.QFileDialog.getSaveFileName(self, self.tr("Save file"),
+        "", "Files (*.html)")
 
-      print("Successfully wrote words to {0}".format(filename))
+    title, _ = QtGui.QInputDialog.getText(self, self.tr("Title"), self.tr(
+      "Title of the html file"))
+
+    words_list = self._get_words()
+
+    entries_str = "\n".join([TEMPLATE_HTML_ROW.format(
+      word=_[0], translation=_[1]) for _ in words_list])
+
+    resulting_html = TEMPLATE_HTML.format(title=title, entries=entries_str)
+
+    with open(filename, 'w') as f:
+      f.writelines(resulting_html)
+
+    self.statusBar().showMessage(self.tr("Exported successfully to {0}").format(
+      filename), STATUS_BAR_TIMEOUT)
+
+  def save(self):
+    result = [TEMPLATE_CSV.format(word1 = words[0].text(),
+      word2 = words[1].text()) 
+      for words in self.input_boxes
+      if words[0].text() != '' and words[1].text != '']
+
+    filename = QtGui.QFileDialog.getSaveFileName(self, self.tr("Save file"),
+        "", "Files (*.*)")
+    
+    if filename == '': 
+      return
+
+    with open(filename, 'w') as f:
+      f.writelines(result)
+
+    print("Successfully wrote words to {0}".format(filename))
 
 
-    def download_audios(self,
-        url = 'https://docs.google.com/uc?export=download&id=0B4itASCdgeQKbVdFVVQxeGh6UU0'): 
-      dirname = QtGui.QFileDialog.getExistingDirectory(self,
-          self.tr("Directory for the sounds"))
-      
-      if dirname == '': 
-        return
+  def download_audios(self,
+      url = 'http://ubuntuone.com/30FlazWAzqPCmlebqNwiXZ'): 
+    dirname = QtGui.QFileDialog.getExistingDirectory(self,
+        self.tr("Directory for the sounds"))
+    
+    if dirname == '': 
+      return
 
-      result_filename = "{0}/{1}.zip".format(dirname, uuid.uuid4().hex)
+    result_filename = "{0}/{1}.zip".format(dirname, uuid.uuid4().hex)
 
-      self.statusBar().showMessage(self.tr("Connecting to the server"))
-      zipFileDownloader = ZipFileDownloader(url, dirname)
-      zipFileDownloader.executionStatus.newValue.connect(
-          self.updateStatusBarWithTimeout)
+    self.statusBar().showMessage(self.tr("Connecting to the server"))
+    zipFileDownloader = ZipFileDownloader(url, dirname)
+    zipFileDownloader.executionStatus.newValue.connect(
+        self.updateStatusBarWithTimeout)
 
-      self.pool.start(zipFileDownloader)
+    self.pool.start(zipFileDownloader)
 
-    @QtCore.pyqtSlot(str, int)
-    def updateStatusBarWithTimeout(self, message, timeout=0):
-      self.statusBar().showMessage(message)
+  @QtCore.pyqtSlot(str, int)
+  def updateStatusBarWithTimeout(self, message, timeout=0):
+    self.statusBar().showMessage(message)
 
-    def download_audios_custom_url(self):
-      url = QtGui.QInputDialog.getText(self, self.tr("Url"),
-          self.tr("The url to use for audio files"))
+  def download_audios_custom_url(self):
+    url = QtGui.QInputDialog.getText(self, self.tr("Url"),
+        self.tr("The url to use for audio files"))
 
-      if url == '':
-        QtGui.QMessageBox(self.tr("Aborting as no url was provided"))
+    if url == '':
+      QtGui.QMessageBox(self.tr("Aborting as no url was provided"))
 
-      self.download_audios(url)
+    self.download_audios(url)
 
 class ExecutionStatus(QtCore.QObject):
   newValue = QtCore.pyqtSignal(str, int)
@@ -269,7 +326,8 @@ class ZipFileDownloader(QtCore.QRunnable):
               self._tr("Downloaded {} KB of {} KB".format(downloaded // 1024,
                   file_size // 1024)), 0)
 
-    self.executionStatus.newValue.emit(self._tr("Download completed"), 10000)
+    self.executionStatus.newValue.emit(self._tr("Download completed"),
+        STATUS_BAR_TIMEOUT)
 
   def _unpack_file_to_dir(self, result_filename):
     self.executionStatus.newValue.emit(
@@ -278,7 +336,8 @@ class ZipFileDownloader(QtCore.QRunnable):
     with zipfile.ZipFile(result_filename) as zf:
       zf.extractall(self.dirname)
 
-    self.executionStatus.newValue.emit(self._tr("Unpacking finished"), 10000)
+    self.executionStatus.newValue.emit(self._tr("Unpacking finished"),
+        STATUS_BAR_TIMEOUT)
 
 class KvtmlConvertorDialog(QtGui.QDialog):
   def __init__(self, words, parent=None):
@@ -400,7 +459,7 @@ class KvtmlConvertorDialog(QtGui.QDialog):
       f.writelines(data)
 
   def write_to_kvtml(self, words_list, filename, title):
-    entries_str = "\n".join([TEMPLATE_ENTRY.format(
+    entries_str = "\n".join([TEMPLATE_KVTML_ENTRY.format(
       index=_[3], word=_[0], translation=_[1], sound1=self.format_sound(_[2]))
       for _ in words_list])
 
