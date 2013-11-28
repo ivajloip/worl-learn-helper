@@ -22,10 +22,9 @@ def write_to_file(basedir, filename, data):
     f.write(data)
 
 def write_to_epub(basedir, filename, files):
-  files = [basedir + '/' + f for f in files]
-  with zipfile.ZipFile(filename + '.epub', 'w') as epub:
+  with zipfile.ZipFile(filename, 'w') as epub:
     for f in files: 
-      epub.write(f)
+      epub.write(basedir + '/' + f, f)
 
 # Convert a pairs of words with given title to an epub 
 def convert(words, title, result_filename, author = 'Unknown', lang = 'en'):
@@ -53,5 +52,7 @@ def convert(words, title, result_filename, author = 'Unknown', lang = 'en'):
   files = ['content.opf', 'toc.ncx', 'words.html', 'mimetype', 'stylesheet.css',
       'page_styles.css', 'META-INF/container.xml']
   write_to_epub(tmp_dir, result_filename, files)
+
+  shutil.rmtree(tmp_dir)
 
 #convert([('a', 'b')], 'Foo', '/tmp/foo')

@@ -8,6 +8,7 @@ import urllib.request
 import uuid
 import zipfile
 from PyQt4 import QtCore, QtGui
+import epub_converter
 
 STATUS_BAR_TIMEOUT = 10000
 
@@ -109,9 +110,10 @@ class MainWindow(QtGui.QMainWindow):
         'Ctrl+K', 'Export to wordquiz/kwordquiz file', self.export_kvtml,
         export)
 
-    export = file_menu.addMenu('&Export')
     self.createMenuItem('Export to html', 'icons/export_html.png',
         'Ctrl+H', 'Export to html file', self.export_html, export)
+    self.createMenuItem('Export to epub', 'icons/export_epub.png',
+        'Ctrl+E', 'Export to epub file', self.export_epub, export)
 
     file_menu.addSeparator()
     self.createMenuItem('Exit', 'icons/exit.png', 'Ctrl+Q',
@@ -236,6 +238,19 @@ class MainWindow(QtGui.QMainWindow):
 
     with open(filename, 'w') as f:
       f.writelines(resulting_html)
+
+    self.statusBar().showMessage(self.tr("Exported successfully to {0}").format(
+      filename), STATUS_BAR_TIMEOUT)
+
+  def export_epub(self):
+    filename = QtGui.QFileDialog.getSaveFileName(self, self.tr("Save file"),
+        "", "Files (*.html)")
+
+    title, _ = QtGui.QInputDialog.getText(self, self.tr("Title"), self.tr(
+      "Title of the html file"))
+
+    words_list = self._get_words()
+    epub_converter.convert(words_list, title, filename)
 
     self.statusBar().showMessage(self.tr("Exported successfully to {0}").format(
       filename), STATUS_BAR_TIMEOUT)
