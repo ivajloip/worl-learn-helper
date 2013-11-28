@@ -1,0 +1,17 @@
+<?xml version='1.0' encoding='utf-8'?>
+<ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1" xml:lang="eng">
+  <head>
+    <meta content="{id}" name="dtb:uid"/>
+  </head>
+  <docTitle>
+    <text>{title}</text>
+  </docTitle>
+  <navMap>
+    <navPoint id="{navigation_id}" playOrder="1">
+      <navLabel>
+        <text>Start</text>
+      </navLabel>
+      <content src="words.html"/>
+    </navPoint>
+  </navMap>
+</ncx>

@@ -1,0 +1,4 @@
+        <tr class="word_row">
+          <td class="word">{word}</td>
+          <td class="word">{translation}</td>
+        </tr>
