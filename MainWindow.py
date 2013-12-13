@@ -173,7 +173,7 @@ class MainWindow(QtGui.QMainWindow):
 
   def open_csv(self):
     filename = QtGui.QFileDialog.getOpenFileName(self, self.tr("Open file"),
-        "", "Files (*.*)")
+        "", "All files (*.*)")
 
     if filename == '': 
       return
@@ -201,7 +201,7 @@ class MainWindow(QtGui.QMainWindow):
 
   def import_html(self):
     filename = QtGui.QFileDialog.getOpenFileName(self,
-        self.tr("Import from html file"), "", "Files (*.html *.xhtml)")
+        self.tr("Import from html file"), "", "Html files (*.html *.xhtml)")
 
     if filename == '': 
       return
@@ -224,7 +224,7 @@ class MainWindow(QtGui.QMainWindow):
 
   def export_html(self):
     filename = QtGui.QFileDialog.getSaveFileName(self, self.tr("Save file"),
-        "", "Files (*.html)")
+        "", "Html files (*.html)")
 
     title, _ = QtGui.QInputDialog.getText(self, self.tr("Title"), self.tr(
       "Title of the html file"))
@@ -244,10 +244,10 @@ class MainWindow(QtGui.QMainWindow):
 
   def export_epub(self):
     filename = QtGui.QFileDialog.getSaveFileName(self, self.tr("Save file"),
-        "", "Files (*.html)")
+        "", "Epub files (*.epub)")
 
     title, _ = QtGui.QInputDialog.getText(self, self.tr("Title"), self.tr(
-      "Title of the html file"))
+      "Title of the epub file"))
 
     words_list = self._get_words()
     epub_converter.convert(words_list, title, filename)
@@ -262,7 +262,7 @@ class MainWindow(QtGui.QMainWindow):
       if words[0].text() != '' and words[1].text != '']
 
     filename = QtGui.QFileDialog.getSaveFileName(self, self.tr("Save file"),
-        "", "Files (*.*)")
+        "", "Comma separated values files (*.csv)")
     
     if filename == '': 
       return
@@ -409,7 +409,7 @@ class KvtmlConvertorDialog(QtGui.QDialog):
 
   def finish_button_clicked(self): 
     result_filename = QtGui.QFileDialog.getSaveFileName(self,
-        self.tr("Save file"), "", "Files (*.*)")
+        self.tr("Save file"), "", "Kvtml files (*.kvtml)")
 
     if result_filename == '':
       return
