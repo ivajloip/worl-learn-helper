@@ -7,8 +7,9 @@ import os
 import urllib.request
 import uuid
 import zipfile
-from PyQt4 import QtCore, QtGui
 import epub_converter
+import KvtmlConvertorDialog
+from PyQt4 import QtCore, QtGui
 
 STATUS_BAR_TIMEOUT = 10000
 
@@ -219,7 +220,7 @@ class MainWindow(QtGui.QMainWindow):
 
   def export_kvtml(self):
     words = self._get_words()
-    converterDialog = KvtmlConvertorDialog(words, self)
+    converterDialog = KvtmlConvertorDialog.KvtmlConvertorDialog(words, self)
     converterDialog.exec_()
 
   def export_html(self):
@@ -354,156 +355,3 @@ class ZipFileDownloader(QtCore.QRunnable):
     self.executionStatus.newValue.emit(self._tr("Unpacking finished"),
         STATUS_BAR_TIMEOUT)
 
-class KvtmlConvertorDialog(QtGui.QDialog):
-  def __init__(self, words, parent=None):
-    super(KvtmlConvertorDialog, self).__init__(parent)
-    self.words = words
-
-    self.use_sound_checkbox = QtGui.QCheckBox(self)
-    self.use_sound_checkbox.setChecked(True)
-    self.layout = QtGui.QFormLayout()
-    self.layout.addRow(self.tr("Sound"), self.use_sound_checkbox)
-
-    sound_directory_widget = QtGui.QWidget(self)
-    sound_directory_layout = QtGui.QFormLayout()
-    self.choose_sound_directory_button = QtGui.QPushButton(
-        self.tr("Choose... "), self)
-    self.choose_sound_directory_button.setEnabled(True)
-    
-    self.sound_directory = QtGui.QLabel("")
-    sound_directory_layout.addRow(self.choose_sound_directory_button,
-        self.sound_directory)
-    sound_directory_widget.setLayout(sound_directory_layout)
-
-    self.layout.addRow(self.tr("Sound Directory"), sound_directory_widget)
-
-    self.title_input = QtGui.QLineEdit(self)
-    self.layout.addRow(self.tr("Title"), self.title_input)
-
-    self.use_sound_checkbox.stateChanged.connect(self.use_sound_state_change)
-    self.finish_button = QtGui.QPushButton(self.tr("Finish"), self)
-    self.finish_button.setEnabled(False)
-    self.finish_button.clicked.connect(self.finish_button_clicked)
-
-    self.layout.addRow(self.tr(""), self.finish_button)
-    self.setLayout(self.layout)
-
-    self.choose_sound_directory_button.clicked.connect(
-        self.choose_sounds_directory)
-
-  def use_sound_state_change(self):
-    state = self.use_sound_checkbox.isChecked()
-    self.choose_sound_directory_button.setEnabled(state)
-
-    sound_directory_path = self.sound_directory.text()
-
-    self.finish_button.setEnabled(not(state) or sound_directory_path != '')
-
-  def choose_sounds_directory(self):
-      filename = QtGui.QFileDialog.getExistingDirectory(self,
-          self.tr("Sounds directory"))
-
-      self.sound_directory.setText(filename)
-
-      self.finish_button.setEnabled(filename != '')
-
-  def finish_button_clicked(self): 
-    result_filename = QtGui.QFileDialog.getSaveFileName(self,
-        self.tr("Save file"), "", "Kvtml files (*.kvtml)")
-
-    if result_filename == '':
-      return
-
-    french_audio = self.map_audio_files()
-
-    words_data = [(self.words[index][0], self.words[index][1],
-      french_audio[index], index) for index in range(len(self.words))]
-
-    title = self.title_input.text()
-
-    self.write_to_kvtml(words_data, result_filename, title)
-
-    QtGui.QMessageBox.information(self, self.tr("Export successful"),
-        self.tr("The words were successfully saved to {0}").format(
-          result_filename))
-    self.accept()
-
-  def has_common_word(self, phrase, audio):
-    skip_words = ['une', 'un', 'le', 'la', 'les', 'de', 'des', 'du', 'se', 'e',
-        'à', 'et', 'ou']
-    return any([_ not in skip_words and audio.find(_) >= 0
-      for _ in phrase.split(' ')])
-
-  def find_audio_file(self, phrase, files, extension = '.flac'):
-    if not self.use_sound_checkbox.isChecked():
-      return None
-
-    basedir = self.sound_directory.text() + '/'
-    phrase = phrase.lower()
-    complete_match = [_ for _ in files if _ == phrase + extension]
-
-    if len(complete_match) > 0: 
-      print("Found complete match for {0}".format(phrase))
-      return basedir + complete_match[0]
-
-    partial_match = files
-    for word in phrase.split(' '):
-      partial_match = [_ for _ in partial_match if _.find(word) >= 0]
-
-    if len(partial_match) == 0:
-      partial_match = [_ for _ in files if self.has_common_word(phrase, _)]
-
-    partial_match = partial_match[:10]
-
-    options_count = len(partial_match)
-    if options_count == 0:
-      return None
-    elif options_count == 1:
-      return partial_match[0]
-
-    title = self.tr("Select audio file to use")
-    label = self.tr("For {0}").format(phrase)
-    option_to_use = QtGui.QInputDialog.getItem(self, title, label,
-        partial_match, 0, False)
-
-    if not option_to_use[1]:
-      return None
-
-    return option_to_use[0]
-
-  def map_audio_files(self):
-    files = os.listdir(self.sound_directory.text())
-
-    return [self.find_audio_file(word[0], files) for word in self.words]
-
-  def format_sound(self, sound_file):
-    if sound_file == None:
-      return ''
-
-    return TEMPLATE_SOUND.format(sound = sound_file)
-
-  def get_formatted_date(self, ):
-    now = time.localtime()
-
-    return "{year}-{month}-{day}".format(
-        year=now.tm_year, month=now.tm_mon, day=now.tm_mday)
-
-  def write_to_file(self, filename, data):
-    with open(filename, 'w') as f:
-      f.writelines(data)
-
-  def write_to_kvtml(self, words_list, filename, title):
-    entries_str = "\n".join([TEMPLATE_KVTML_ENTRY.format(
-      index=_[3], word=_[0], translation=_[1], sound1=self.format_sound(_[2]))
-      for _ in words_list])
-
-    resulting_kvtml = TEMPLATE_KVTML.format(title=title, entries=entries_str,
-        date=self.get_formatted_date())
-
-    self.write_to_file(filename, resulting_kvtml)
-
-if __name__ == '__main__':
-    app = QtGui.QApplication(sys.argv)
-
-    window = MainWindow()
-    sys.exit(app.exec_())       
