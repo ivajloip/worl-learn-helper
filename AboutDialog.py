@@ -4,7 +4,7 @@ class AboutDialog(QtGui.QDialog):
 
   def __init__(self, message, parent = None):
     super(AboutDialog, self).__init__(parent)
-    self.setWindowTitle(self.tr('Word Learning Helper'))
+    self.setWindowTitle(self.tr('About'))
 
     layout = QtGui.QVBoxLayout(self)
     self.setLayout(layout)
