@@ -9,47 +9,13 @@ import uuid
 import zipfile
 import epub_converter
 import KvtmlConvertorDialog
+import AboutDialog
 from PyQt4 import QtCore, QtGui
 
 STATUS_BAR_TIMEOUT = 10000
 
 # Templates part
 TEMPLATE_CSV = '"{word1}", "{word2}"\n'
-
-TEMPLATE_SOUND = '\n        <sound>file://{sound}</sound>'
-
-TEMPLATE_KVTML_ENTRY = """    <entry id="{index}">
-      <translation id="0">{sound1}
-        <text>{word}</text>
-      </translation>
-      <translation id="1">
-        <text>{translation}</text>
-      </translation>
-    </entry>"""
-
-TEMPLATE_KVTML = """<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE kvtml PUBLIC "kvtml2.dtd" "http://edu.kde.org/kvtml/kvtml2.dtd">
-<kvtml version="2.0">
-  <information>
-    <generator>kwordquiz 0.9.2</generator>
-    <title>{title}</title>
-    <date>{date}</date>
-  </information>
-  <identifiers>
-    <identifier id="0">
-      <name>Column 1</name>
-      <locale>en</locale>
-    </identifier>
-    <identifier id="1">
-      <name>Column 2</name>
-      <locale>en</locale>
-    </identifier>
-  </identifiers>
-  <entries>
-{entries}
-  </entries>
-</kvtml>
-"""
 
 TEMPLATE_HTML_ROW = """      <tr>
         <td>{word}</td>
@@ -129,6 +95,13 @@ class MainWindow(QtGui.QMainWindow):
         'icons/download_audios.png', 'Ctrl+C',
         'Download free audio files from other url',
         self.download_audios_custom_url, tools)
+
+    help_submenu = menubar.addMenu('&Help')
+
+    self.createMenuItem('About',
+        'icons/about.png', 'Ctrl+L',
+        'Provides license and additional information',
+        self.show_about_dialog, help_submenu)
     
     scrollableArea = QtGui.QScrollArea(self)
     self.setCentralWidget(scrollableArea)
@@ -273,6 +246,11 @@ class MainWindow(QtGui.QMainWindow):
 
     print("Successfully wrote words to {0}".format(filename))
 
+  def show_about_dialog(self):
+    with open('LICENSE', 'r') as f:
+      license = f.read()
+    aboutDialog = AboutDialog.AboutDialog(license, self)
+    aboutDialog.exec_()
 
   def download_audios(self,
       url = 'http://ubuntuone.com/30FlazWAzqPCmlebqNwiXZ'): 
