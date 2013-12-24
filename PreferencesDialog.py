@@ -17,7 +17,7 @@ class Config:
     self.read(path)
 
   def read(self, path):
-    if os.path.exists(path_dir):
+    if os.path.exists(path):
       with open(path) as f:
         conf_as_dict = json.load(f)
     else:
