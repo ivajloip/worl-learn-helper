@@ -67,6 +67,9 @@ class PreferencesDialog(QtGui.QDialog):
     self.configuration = configuration
 
   def ok_button_clicked(self):
+    self.configuration.sound_directory = (
+        self.sound_directory_widget.get_directory())
+
     self.configuration.write()
     
     self.accept()
