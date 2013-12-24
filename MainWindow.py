@@ -10,6 +10,8 @@ import zipfile
 import epub_converter
 import KvtmlConvertorDialog
 import AboutDialog
+import PreferencesDialog
+
 from PyQt4 import QtCore, QtGui
 
 STATUS_BAR_TIMEOUT = 10000
@@ -96,6 +98,9 @@ class MainWindow(QtGui.QMainWindow):
         'Download free audio files from other url',
         self.download_audios_custom_url, tools)
 
+    self.createMenuItem('Preferences', 'icons/preferences.png',
+        'Ctrl+P', 'Program configuration', self.show_preferences_dialog, tools)
+
     help_submenu = menubar.addMenu('&Help')
 
     self.createMenuItem('About',
@@ -117,6 +122,8 @@ class MainWindow(QtGui.QMainWindow):
 
     self.center()
     self.show()
+
+    self.configuration = PreferencesDialog.Config()
 
   def createMenuItem(self, label, iconLocation, shortCut, statusTip, func, addTo):
     tmp = QtGui.QAction(QtGui.QIcon(iconLocation), label, self)
@@ -193,7 +200,8 @@ class MainWindow(QtGui.QMainWindow):
 
   def export_kvtml(self):
     words = self._get_words()
-    converterDialog = KvtmlConvertorDialog.KvtmlConvertorDialog(words, self)
+    converterDialog = KvtmlConvertorDialog.KvtmlConvertorDialog(words,
+        self.configuration, self)
     converterDialog.exec_()
 
   def export_html(self):
@@ -249,8 +257,13 @@ class MainWindow(QtGui.QMainWindow):
   def show_about_dialog(self):
     with open('LICENSE', 'r') as f:
       license = f.read()
-    aboutDialog = AboutDialog.AboutDialog(license, self)
-    aboutDialog.exec_()
+    about_dialog = AboutDialog.AboutDialog(license, self)
+    about_dialog.exec_()
+
+  def show_preferences_dialog(self):
+    preferences_dialog = PreferencesDialog.PreferencesDialog(self.configuration,
+        self, "")
+    preferences_dialog.exec_()
 
   def download_audios(self,
       url = 'http://ubuntuone.com/30FlazWAzqPCmlebqNwiXZ'): 
