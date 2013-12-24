@@ -17,8 +17,12 @@ class Config:
     self.read(path)
 
   def read(self, path):
-    with open(path) as f:
-      conf_as_dict = json.load(f)
+    if os.path.exists(path_dir):
+      with open(path) as f:
+        conf_as_dict = json.load(f)
+    else:
+      conf_as_dict = {'config_file_path': CONFIG_FILE_PATH,
+          'sound_directory': ''}
 
     self.config_file_path = conf_as_dict['config_file_path']
     self.sound_directory = conf_as_dict['sound_directory']
