@@ -1,5 +1,6 @@
 import time
 import os
+import FileSelector
 
 from PyQt4 import QtCore, QtGui
 
@@ -42,7 +43,7 @@ TEMPLATE_KVTML = """<?xml version="1.0" encoding="UTF-8"?>
 
 
 class KvtmlConvertorDialog(QtGui.QDialog):
-  def __init__(self, words, parent=None):
+  def __init__(self, words, configuration, parent=None):
     super(KvtmlConvertorDialog, self).__init__(parent)
     self.words = words
 
@@ -51,48 +52,30 @@ class KvtmlConvertorDialog(QtGui.QDialog):
     self.layout = QtGui.QFormLayout()
     self.layout.addRow(self.tr("Sound"), self.use_sound_checkbox)
 
-    sound_directory_widget = QtGui.QWidget(self)
-    sound_directory_layout = QtGui.QFormLayout()
-    self.choose_sound_directory_button = QtGui.QPushButton(
-        self.tr("Choose... "), self)
-    self.choose_sound_directory_button.setEnabled(True)
-    
-    self.sound_directory = QtGui.QLabel("")
-    sound_directory_layout.addRow(self.choose_sound_directory_button,
-        self.sound_directory)
-    sound_directory_widget.setLayout(sound_directory_layout)
+    self.sound_directory_widget = FileSelector.FileSelector(
+        self.tr("Choose..."), configuration.sound_directory, self)
 
-    self.layout.addRow(self.tr("Sound Directory"), sound_directory_widget)
+    self.layout.addRow(self.tr("Sound Directory"), self.sound_directory_widget)
 
     self.title_input = QtGui.QLineEdit(self)
     self.layout.addRow(self.tr("Title"), self.title_input)
 
     self.use_sound_checkbox.stateChanged.connect(self.use_sound_state_change)
     self.finish_button = QtGui.QPushButton(self.tr("Finish"), self)
-    self.finish_button.setEnabled(False)
+    self.finish_button.setEnabled(
+        self.sound_directory_widget.get_directory() != '')
     self.finish_button.clicked.connect(self.finish_button_clicked)
 
     self.layout.addRow(self.tr(""), self.finish_button)
     self.setLayout(self.layout)
 
-    self.choose_sound_directory_button.clicked.connect(
-        self.choose_sounds_directory)
-
   def use_sound_state_change(self):
     state = self.use_sound_checkbox.isChecked()
     self.choose_sound_directory_button.setEnabled(state)
 
-    sound_directory_path = self.sound_directory.text()
+    sound_directory_path = self.sound_directory_widget.get_directory()
 
     self.finish_button.setEnabled(not(state) or sound_directory_path != '')
-
-  def choose_sounds_directory(self):
-      filename = QtGui.QFileDialog.getExistingDirectory(self,
-          self.tr("Sounds directory"))
-
-      self.sound_directory.setText(filename)
-
-      self.finish_button.setEnabled(filename != '')
 
   def finish_button_clicked(self): 
     result_filename = QtGui.QFileDialog.getSaveFileName(self,
@@ -125,7 +108,7 @@ class KvtmlConvertorDialog(QtGui.QDialog):
     if not self.use_sound_checkbox.isChecked():
       return None
 
-    basedir = self.sound_directory.text() + '/'
+    basedir = self.sound_directory_widget.get_directory() + '/'
     phrase = phrase.lower()
     complete_match = [_ for _ in files if _ == phrase + extension]
 
@@ -159,7 +142,7 @@ class KvtmlConvertorDialog(QtGui.QDialog):
     return option_to_use[0]
 
   def map_audio_files(self):
-    files = os.listdir(self.sound_directory.text())
+    files = os.listdir(self.sound_directory_widget.get_directory())
 
     return [self.find_audio_file(word[0], files) for word in self.words]
 
