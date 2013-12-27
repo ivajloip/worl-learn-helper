@@ -1,5 +1,6 @@
 import time
 import os
+import re
 import FileSelector
 
 from PyQt4 import QtCore, QtGui
@@ -117,6 +118,11 @@ class KvtmlConvertorDialog(QtGui.QDialog):
       return basedir + complete_match[0]
 
     partial_match = files
+
+    # sometimes some small words attached to bigger ones can prevent the bigger
+    # ones from being recongnized
+    phrase = re.sub('[dls][\'`]', '', phrase)
+
     for word in phrase.split(' '):
       partial_match = [_ for _ in partial_match if _.find(word) >= 0]
 
@@ -129,7 +135,7 @@ class KvtmlConvertorDialog(QtGui.QDialog):
     if options_count == 0:
       return None
     elif options_count == 1:
-      return partial_match[0]
+      return basedir + partial_match[0]
 
     title = self.tr("Select audio file to use")
     label = self.tr("For {0}").format(phrase)
@@ -139,7 +145,7 @@ class KvtmlConvertorDialog(QtGui.QDialog):
     if not option_to_use[1]:
       return None
 
-    return option_to_use[0]
+    return basedir + option_to_use[0]
 
   def map_audio_files(self):
     files = os.listdir(self.sound_directory_widget.get_directory())
