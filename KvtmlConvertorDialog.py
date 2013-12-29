@@ -72,7 +72,7 @@ class KvtmlConvertorDialog(QtGui.QDialog):
 
   def use_sound_state_change(self):
     state = self.use_sound_checkbox.isChecked()
-    self.choose_sound_directory_button.setEnabled(state)
+    self.use_sound_checkbox.setEnabled(state)
 
     sound_directory_path = self.sound_directory_widget.get_directory()
 
@@ -105,8 +105,11 @@ class KvtmlConvertorDialog(QtGui.QDialog):
     return any([_ not in skip_words and audio.find(_) >= 0
       for _ in phrase.split(' ')])
 
+  def search_for_audio(self):
+    return self.use_sound_checkbox.isChecked()
+
   def find_audio_file(self, phrase, files, extension = '.flac'):
-    if not self.use_sound_checkbox.isChecked():
+    if not self.search_for_audio():
       return None
 
     basedir = self.sound_directory_widget.get_directory() + '/'
@@ -148,6 +151,9 @@ class KvtmlConvertorDialog(QtGui.QDialog):
     return basedir + option_to_use[0]
 
   def map_audio_files(self):
+    if not self.search_for_audio():
+      return [None for _ in self.words]
+
     files = os.listdir(self.sound_directory_widget.get_directory())
 
     return [self.find_audio_file(word[0], files) for word in self.words]
