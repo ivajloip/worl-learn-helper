@@ -72,7 +72,6 @@ class KvtmlConvertorDialog(QtGui.QDialog):
 
   def use_sound_state_change(self):
     state = self.use_sound_checkbox.isChecked()
-    self.use_sound_checkbox.setEnabled(state)
 
     sound_directory_path = self.sound_directory_widget.get_directory()
 
