@@ -44,6 +44,7 @@ TEMPLATE_HTML = """<?xml version='1.0' encoding='utf-8'?>
         <th style="text-align:left; width:49%;">bulgare</th>
       </tr>
 {entries}
+    </table>
   </body>
 
 </html>
