@@ -214,6 +214,9 @@ class MainWindow(QtGui.QMainWindow):
     filename = QtGui.QFileDialog.getSaveFileName(self, self.tr("Save file"),
         "", "Html files (*.html)")
 
+    if filename == '':
+      return
+
     title, _ = QtGui.QInputDialog.getText(self, self.tr("Title"), self.tr(
       "Title of the html file"))
 
