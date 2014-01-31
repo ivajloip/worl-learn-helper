@@ -37,36 +37,6 @@ ODF_NAMESPACES = {
   'xml': 'http://www.w3.org/XML/1998/namespace'
   } 
 
-#def has_cyrilic_letters(text):
-  #return re.match('^.*[а-яА-Я].*$', text) != None
-
-#def get_words(file_obj):
-  #tree = etree.parse(file_obj)
-  #root = tree.getroot()
-  #table = root.find('.//table:table', ODF_NAMESPACES)
-
-  #cells = table.findall('.//table:table-cell/', ODF_NAMESPACES)
-  #cells_text = [re.sub('  +', ' ', ' '.join(_.itertext())) for _ in cells]
-
-  #word_pairs = []
-  #index = 0
-
-  #while(index < len(cells)):
-    #next_index = index + 2
-    #word = cells_text[index]
-    #translation = cells_text[index + 1]
-
-    ## This is added as sometimes two consequtive cells belong to the translation
-    ## It is an ugly hack that should be avoided if possible
-    #while(next_index < len(cells) and has_cyrilic_letters(cells_text[next_index])):
-      #translation += cells_text[next_index]
-      #next_index += 1
-
-    #word_pairs.append((word, translation))
-    #index = next_index
-
-  #return word_pairs
-
 def get_words(file_obj):
   tree = etree.parse(file_obj)
   root = tree.getroot()
@@ -80,5 +50,3 @@ def get_words(file_obj):
 def parse_odt(filepath):
   with zipfile.ZipFile(filepath) as odt_file:
     return get_words(odt_file.open('content.xml'))
- 
-#print('\n'.join([str(_) for _ in parse_odt('/tmp/00000002.vocabulaire_3_A2.odt')]))
