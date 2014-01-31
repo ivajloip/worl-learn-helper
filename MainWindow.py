@@ -234,6 +234,9 @@ class MainWindow(QtGui.QMainWindow):
     filename = QtGui.QFileDialog.getSaveFileName(self, self.tr("Save file"),
         "", "Epub files (*.epub)")
 
+    if filename == '':
+      return
+
     title, _ = QtGui.QInputDialog.getText(self, self.tr("Title"), self.tr(
       "Title of the epub file"))
 
