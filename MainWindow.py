@@ -12,6 +12,7 @@ import KvtmlConvertorDialog
 import AboutDialog
 import PreferencesDialog
 import odt_parser
+import docx_parser
 
 from PyQt4 import QtCore, QtGui
 
@@ -67,13 +68,7 @@ class MainWindow(QtGui.QMainWindow):
     file_menu = menubar.addMenu('&File')
 
     self.createMenuItem('Open', 'icons/open.png', 'Ctrl+O',
-        'Open a CSV', self.open_csv, file_menu)
-
-    self.createMenuItem('Import from html', 'icons/import_html.png',
-        'Ctrl+I', 'Import from html file', self.import_html, file_menu)
-
-    self.createMenuItem('Import from odt', 'icons/import_odt.png',
-        'Ctrl+T', 'Import from odt file', self.import_odt, file_menu)
+        'Open csv, html, odt or docx file', self._open, file_menu)
 
     self.createMenuItem('Save', 'icons/save.png', 'Ctrl+S',
         'Save as CSV', self.save, file_menu)
@@ -156,24 +151,13 @@ class MainWindow(QtGui.QMainWindow):
       input_box = self.createInputBox(layout)
       self.input_boxes.append(input_box)
 
-  def open_csv(self):
-    filename = QtGui.QFileDialog.getOpenFileName(self, self.tr("Open file"),
-        "", "All files (*.*)")
-
-    if filename == '': 
-      return
-
+  def parse_csv(self, filename):
     with open(filename) as fin:
       lines = fin.readlines()
 
     word_pairs = [line[1:-2].split('", "') for line in lines]
 
-    #for index in range(len(lines)):
-      #word1, word2 = lines[index][1:-2].split('", "')
-      #self.input_boxes[index][0].setText(word1)
-      #self.input_boxes[index][1].setText(word2)
-
-    self._update_word_pairs(word_pairs)
+    return word_pairs
 
   def parse_html(self, filename):
     with open(filename) as f:
@@ -188,25 +172,24 @@ class MainWindow(QtGui.QMainWindow):
 
     return list(zip(french_words, bulgarian_words))
 
-  def import_html(self):
-    filename = QtGui.QFileDialog.getOpenFileName(self,
-        self.tr("Import from html file"), "", "Html files (*.html *.xhtml)")
+  def _open(self):
+    parsers = {"Html files (*.html *.xhtml)": self.parse_html,
+        "Odt files (*.odt)": odt_parser.parse_odt,
+        "Csv files (*.csv)": self.parse_csv,
+        "Docx files (*.docx)": docx_parser.parse_docx}
+
+    filters = list(parsers.keys())
+    filters.sort()
+
+    filename, file_filter = QtGui.QFileDialog.getOpenFileNameAndFilter(self,
+        self.tr("Import from file"), "",
+        ";;".join(filters))
 
     if filename == '': 
       return
 
-    word_pairs = self.parse_html(filename)
-
-    self._update_word_pairs(word_pairs)
-
-  def import_odt(self):
-    filename = QtGui.QFileDialog.getOpenFileName(self,
-        self.tr("Import from odt file"), "", "Odt files (*.odt)")
-
-    if filename == '': 
-      return
-
-    word_pairs = list(odt_parser.parse_odt(filename))
+    parser = parsers[file_filter]
+    word_pairs = list(parser(filename))
 
     self._update_word_pairs(word_pairs)
 
