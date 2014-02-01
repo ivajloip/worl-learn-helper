@@ -7,16 +7,19 @@ import os
 import urllib.request
 import uuid
 import zipfile
+import functools
 import epub_converter
 import KvtmlConvertorDialog
 import AboutDialog
 import PreferencesDialog
+import WordDefinition
 import odt_parser
 import docx_parser
 
 from PyQt4 import QtCore, QtGui
 
 STATUS_BAR_TIMEOUT = 10000
+MAX_WORD_COUNT = 100
 
 # Templates part
 TEMPLATE_CSV = '"{word1}", "{word2}"\n'
@@ -113,17 +116,34 @@ class MainWindow(QtGui.QMainWindow):
     frame = QtGui.QFrame()
     scrollableArea.setWidget(frame)
 
-    layout = QtGui.QFormLayout()
+    layout = QtGui.QVBoxLayout()
     frame.setLayout(layout)
     layout.setSizeConstraint(QtGui.QLayout.SetMinimumSize)
 
-    layout.addRow(self.tr('Francais'), QtGui.QLabel('Bulgare'))
-    self.createInputBoxes(layout, 100)
+    self.createTableTitle(layout)
+    self.createInputBoxes(layout, MAX_WORD_COUNT)
 
     self.center()
     self.show()
 
     self.configuration = PreferencesDialog.Config()
+
+  def createTableTitle(self, layout):
+    titleWidget = QtGui.QWidget(self)
+    titleLayout = QtGui.QHBoxLayout()
+    titleLayout.setContentsMargins(0, 0, 0, 0)
+    titleLayout.setSpacing(5)
+
+    titleWidget.setLayout(titleLayout)
+
+    frLabel = QtGui.QLabel(self.tr('Francais'))
+    frLabel.setMinimumWidth(200)
+    bgLabel = QtGui.QLabel(self.tr('Bulgare'))
+    bgLabel.setMinimumWidth(200)
+    titleLayout.addWidget(frLabel)
+    titleLayout.addWidget(bgLabel)
+
+    layout.addWidget(titleWidget)
 
   def createMenuItem(self, label, iconLocation, shortCut, statusTip, func, addTo):
     tmp = QtGui.QAction(QtGui.QIcon(iconLocation), label, self)
@@ -138,19 +158,23 @@ class MainWindow(QtGui.QMainWindow):
     self.move((screen.width()-size.width())/2, (screen.height()-size.height())/2)  
 
   def createInputBox(self, layout):
-    word1 = QtGui.QLineEdit(self)
-    word1.setMinimumWidth(200)
-    word2 = QtGui.QLineEdit(self)
-    word2.setMinimumWidth(200)
-    layout.addRow(word1, word2)
+    newWordDefinition = WordDefinition.WordDefinition(self)
+    layout.addWidget(newWordDefinition)
 
-    return (word1, word2)
+    return newWordDefinition
+
+  def _deleteWord(self, number):
+    words = self._get_words()
+    new_words = words[:number] + words[number + 1:]
+    self._update_word_pairs(new_words, number, len(words))
 
   def createInputBoxes(self, layout, count):
     self.input_boxes = []
     for _ in range(count):
       input_box = self.createInputBox(layout)
       self.input_boxes.append(input_box)
+
+      input_box.deleteClicked.connect(functools.partial(self._deleteWord, _))
 
   def parse_csv(self, filename):
     with open(filename) as fin:
@@ -194,15 +218,19 @@ class MainWindow(QtGui.QMainWindow):
 
     self._update_word_pairs(word_pairs)
 
-  def _update_word_pairs(self, word_pairs):
-    for index in range(len(word_pairs)):
-      self.input_boxes[index][0].setText(word_pairs[index][0])
-      self.input_boxes[index][1].setText(word_pairs[index][1])
+  def _update_word_pairs(self, word_pairs, begin=0, end=MAX_WORD_COUNT):
+    for index in range(begin, len(word_pairs)):
+      self.input_boxes[index].setWord(word_pairs[index][0])
+      self.input_boxes[index].setTranslation(word_pairs[index][1])
+
+    for index in range(max(begin, len(word_pairs)), end):
+      self.input_boxes[index].setWord('')
+      self.input_boxes[index].setTranslation('')
 
   def _get_words(self):
-    return [(words[0].text(), words[1].text()) 
+    return [(words.getWord(), words.getTranslation()) 
         for words in self.input_boxes
-        if words[0].text() != '' and words[1].text != '']
+        if words.getWord() != '' and words.getTranslation() != '']
 
   def export_kvtml(self):
     words = self._get_words()
@@ -250,10 +278,9 @@ class MainWindow(QtGui.QMainWindow):
       filename), STATUS_BAR_TIMEOUT)
 
   def save(self):
-    result = [TEMPLATE_CSV.format(word1 = words[0].text(),
-      word2 = words[1].text()) 
-      for words in self.input_boxes
-      if words[0].text() != '' and words[1].text != '']
+    words = self._get_words()
+    result = [TEMPLATE_CSV.format(word1 = word, word2 = translation) 
+      for word, translation in words]
 
     filename = QtGui.QFileDialog.getSaveFileName(self, self.tr("Save file"),
         "", "Comma separated values files (*.csv)")
