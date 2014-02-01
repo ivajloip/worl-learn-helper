@@ -67,49 +67,7 @@ class MainWindow(QtGui.QMainWindow):
     self.pool = QtCore.QThreadPool()
     self.pool.setMaxThreadCount(5)
 
-#       creates the menuBar and the menu entries
-    menubar = self.menuBar()
-    file_menu = menubar.addMenu('&File')
-
-    self.createMenuItem('Open', 'icons/open.png', 'Ctrl+O',
-        'Open csv, html, odt or docx file', self._open, file_menu)
-
-    self.createMenuItem('Save', 'icons/save.png', 'Ctrl+S',
-        'Save as CSV', self.save, file_menu)
-
-    export = file_menu.addMenu('&Export')
-    self.createMenuItem('Export to kvtml', 'icons/export_kvtml.png',
-        'Ctrl+K', 'Export to wordquiz/kwordquiz file', self.export_kvtml,
-        export)
-
-    self.createMenuItem('Export to html', 'icons/export_html.png',
-        'Ctrl+H', 'Export to html file', self.export_html, export)
-    self.createMenuItem('Export to epub', 'icons/export_epub.png',
-        'Ctrl+E', 'Export to epub file', self.export_epub, export)
-
-    file_menu.addSeparator()
-    self.createMenuItem('Exit', 'icons/exit.png', 'Ctrl+Q',
-        'Exit application', QtCore.SLOT('close()'), file_menu)
-
-    tools = menubar.addMenu('&Tools')
-    self.createMenuItem('Download audio files', 'icons/download_audios.png',
-        'Ctrl+D', 'Download free audio files', self.download_audios,
-        tools)
-
-    self.createMenuItem('Download audio files from url',
-        'icons/download_audios.png', 'Ctrl+C',
-        'Download free audio files from other url',
-        self.download_audios_custom_url, tools)
-
-    self.createMenuItem('Preferences', 'icons/preferences.png',
-        'Ctrl+P', 'Program configuration', self.show_preferences_dialog, tools)
-
-    help_submenu = menubar.addMenu('&Help')
-
-    self.createMenuItem('About',
-        'icons/about.png', 'Ctrl+L',
-        'Provides license and additional information',
-        self.show_about_dialog, help_submenu)
+    self._createMenuBar()
     
     scrollableArea = QtGui.QScrollArea(self)
     self.setCentralWidget(scrollableArea)
@@ -120,15 +78,15 @@ class MainWindow(QtGui.QMainWindow):
     frame.setLayout(layout)
     layout.setSizeConstraint(QtGui.QLayout.SetMinimumSize)
 
-    self.createTableTitle(layout)
-    self.createInputBoxes(layout, MAX_WORD_COUNT)
+    self._createTableTitle(layout)
+    self._createInputBoxes(layout, MAX_WORD_COUNT)
 
     self.center()
     self.show()
 
     self.configuration = PreferencesDialog.Config()
 
-  def createTableTitle(self, layout):
+  def _createTableTitle(self, layout):
     titleWidget = QtGui.QWidget(self)
     titleLayout = QtGui.QHBoxLayout()
     titleLayout.setContentsMargins(0, 0, 0, 0)
@@ -145,12 +103,56 @@ class MainWindow(QtGui.QMainWindow):
 
     layout.addWidget(titleWidget)
 
-  def createMenuItem(self, label, iconLocation, shortCut, statusTip, func, addTo):
+  def _createMenuItem(self, label, iconLocation, shortCut, statusTip, func, addTo):
     tmp = QtGui.QAction(QtGui.QIcon(iconLocation), label, self)
     tmp.setShortcut(shortCut)
     tmp.setStatusTip(statusTip)
     self.connect(tmp, QtCore.SIGNAL('triggered()'), func)
     addTo.addAction(tmp)       
+
+  def _createMenuBar(self):
+    menubar = self.menuBar()
+    fileMenu = menubar.addMenu('&File')
+
+    self._createMenuItem('Open', 'icons/open.png', 'Ctrl+O',
+        'Open csv, html, odt or docx file', self._open, fileMenu)
+
+    self._createMenuItem('Save', 'icons/save.png', 'Ctrl+S',
+        'Save as CSV', self.save, fileMenu)
+
+    export = fileMenu.addMenu('&Export')
+    self._createMenuItem('Export to kvtml', 'icons/export_kvtml.png',
+        'Ctrl+K', 'Export to wordquiz/kwordquiz file', self.exportKvtml,
+        export)
+
+    self._createMenuItem('Export to html', 'icons/export_html.png',
+        'Ctrl+H', 'Export to html file', self.exportHtml, export)
+    self._createMenuItem('Export to epub', 'icons/export_epub.png',
+        'Ctrl+E', 'Export to epub file', self.exportEpub, export)
+
+    fileMenu.addSeparator()
+    self._createMenuItem('Exit', 'icons/exit.png', 'Ctrl+Q',
+        'Exit application', QtCore.SLOT('close()'), fileMenu)
+
+    tools = menubar.addMenu('&Tools')
+    self._createMenuItem('Download audio files', 'icons/download_audios.png',
+        'Ctrl+D', 'Download free audio files', self.downloadAudios,
+        tools)
+
+    self._createMenuItem('Download audio files from url',
+        'icons/download_audios.png', 'Ctrl+C',
+        'Download free audio files from other url',
+        self.downloadAudiosCustomUrl, tools)
+
+    self._createMenuItem('Preferences', 'icons/preferences.png',
+        'Ctrl+P', 'Program configuration', self.showPreferencesDialog, tools)
+
+    helpSubmenu = menubar.addMenu('&Help')
+
+    self._createMenuItem('About',
+        'icons/about.png', 'Ctrl+L',
+        'Provides license and additional information',
+        self.showAboutDialog, helpSubmenu)
 
   def center(self):
     screen = QtGui.QDesktopWidget().screenGeometry()
@@ -165,92 +167,92 @@ class MainWindow(QtGui.QMainWindow):
     return newWordDefinition
 
   def _swapWords(self, firstWordIndex, secondWordIndex):
-    words = self._get_words()
+    words = self._getWords()
 
     tmp = words[firstWordIndex]
     words[firstWordIndex] = words[secondWordIndex]
     words[secondWordIndex] = tmp
 
-    self._update_word_pairs(words, firstWordIndex, secondWordIndex + 1)
+    self._updateWordPairs(words, firstWordIndex, secondWordIndex + 1)
 
   def _deleteWord(self, number):
-    words = self._get_words()
-    new_words = words[:number] + words[number + 1:]
-    self._update_word_pairs(new_words, number, len(words))
+    words = self._getWords()
+    newWords = words[:number] + words[number + 1:]
+    self._updateWordPairs(newWords, number, len(words))
 
-  def createInputBoxes(self, layout, count):
-    self.input_boxes = []
+  def _createInputBoxes(self, layout, count):
+    self.inputBoxes = []
     for _ in range(count):
-      input_box = self.createInputBox(layout, _ != 0, _ != count - 1)
-      self.input_boxes.append(input_box)
+      inputBox = self.createInputBox(layout, _ != 0, _ != count - 1)
+      self.inputBoxes.append(inputBox)
 
-      input_box.deleteClicked.connect(functools.partial(self._deleteWord, _))
-      input_box.moveUp.connect(functools.partial(self._swapWords, _ - 1, _))
-      input_box.moveDown.connect(functools.partial(self._swapWords, _, _ + 1))
+      inputBox.deleteClicked.connect(functools.partial(self._deleteWord, _))
+      inputBox.moveUp.connect(functools.partial(self._swapWords, _ - 1, _))
+      inputBox.moveDown.connect(functools.partial(self._swapWords, _, _ + 1))
 
-  def parse_csv(self, filename):
+  def parseCsv(self, filename):
     with open(filename) as fin:
       lines = fin.readlines()
 
-    word_pairs = [line[1:-2].split('", "') for line in lines]
+    wordPairs = [line[1:-2].split('", "') for line in lines]
 
-    return word_pairs
+    return wordPairs
 
-  def parse_html(self, filename):
+  def parseHtml(self, filename):
     with open(filename) as f:
       lines = f.readlines()
 
     lines = lines[17:-3]
 
-    french_words = [re.sub('\s*<td>(.*)</td>\s*$', '\\1', _)
+    frenchWords = [re.sub('\s*<td>(.*)</td>\s*$', '\\1', _)
         for _ in lines[1::4]]
-    bulgarian_words = [re.sub('\s*<td>(.*)</td>\s*$', '\\1', _)
+    bulgarianWords = [re.sub('\s*<td>(.*)</td>\s*$', '\\1', _)
         for _ in lines[2::4]]
 
-    return list(zip(french_words, bulgarian_words))
+    return list(zip(frenchWords, bulgarianWords))
 
   def _open(self):
-    parsers = {"Html files (*.html *.xhtml)": self.parse_html,
-        "Odt files (*.odt)": odt_parser.parse_odt,
-        "Csv files (*.csv)": self.parse_csv,
-        "Docx files (*.docx)": docx_parser.parse_docx}
+    parsers = {"Html files (*.html *.xhtml)": self.parseHtml,
+        "Odt files (*.odt)": odt_parser.parseOdt,
+        "Csv files (*.csv)": self.parseCsv,
+        "Docx files (*.docx)": docx_parser.parseDocx}
 
     filters = list(parsers.keys())
     filters.sort()
 
-    filename, file_filter = QtGui.QFileDialog.getOpenFileNameAndFilter(self,
+    filename, fileFilter = QtGui.QFileDialog.getOpenFileNameAndFilter(self,
         self.tr("Import from file"), "",
         ";;".join(filters))
 
     if filename == '': 
       return
 
-    parser = parsers[file_filter]
-    word_pairs = list(parser(filename))
+    parser = parsers[fileFilter]
+    wordPairs = list(parser(filename))
 
-    self._update_word_pairs(word_pairs)
+    self._updateWordPairs(wordPairs)
 
-  def _update_word_pairs(self, word_pairs, begin=0, end=MAX_WORD_COUNT):
-    for index in range(begin, len(word_pairs)):
-      self.input_boxes[index].setWord(word_pairs[index][0])
-      self.input_boxes[index].setTranslation(word_pairs[index][1])
+  def _updateWordPairs(self, wordPairs, begin=0, end=MAX_WORD_COUNT):
+    for index in range(begin, len(wordPairs)):
+      self.inputBoxes[index].setWord(wordPairs[index][0])
+      self.inputBoxes[index].setTranslation(wordPairs[index][1])
 
-    for index in range(max(begin, len(word_pairs)), end):
-      self.input_boxes[index].setWord('')
-      self.input_boxes[index].setTranslation('')
+    for index in range(max(begin, len(wordPairs)), end):
+      self.inputBoxes[index].setWord('')
+      self.inputBoxes[index].setTranslation('')
 
-  def _get_words(self):
+  def _getWords(self):
     return [(words.getWord(), words.getTranslation()) 
-        for words in self.input_boxes
-        if words.getWord() != '' and words.getTranslation() != '']
+        for words in self.inputBoxes
+        if words.getWord() != '' or words.getTranslation() != '']
 
-  def export_kvtml(self):
-    words = self._get_words()
+  def exportKvtml(self):
+    words = self._getWords()
     converterDialog = KvtmlConvertorDialog.KvtmlConvertorDialog(words,
         self.configuration, self)
     converterDialog.exec_()
 
-  def export_html(self):
+  def exportHtml(self):
     filename = QtGui.QFileDialog.getSaveFileName(self, self.tr("Save file"),
         "", "Html files (*.html)")
 
@@ -260,20 +262,20 @@ class MainWindow(QtGui.QMainWindow):
     title, _ = QtGui.QInputDialog.getText(self, self.tr("Title"), self.tr(
       "Title of the html file"))
 
-    words_list = self._get_words()
+    wordsList = self._getWords()
 
-    entries_str = "\n".join([TEMPLATE_HTML_ROW.format(
-      word=_[0], translation=_[1]) for _ in words_list])
+    entriesStr = "\n".join([TEMPLATE_HTML_ROW.format(
+      word=_[0], translation=_[1]) for _ in wordsList])
 
-    resulting_html = TEMPLATE_HTML.format(title=title, entries=entries_str)
+    resultingHtml = TEMPLATE_HTML.format(title=title, entries=entriesStr)
 
     with open(filename, 'w') as f:
-      f.writelines(resulting_html)
+      f.writelines(resultingHtml)
 
     self.statusBar().showMessage(self.tr("Exported successfully to {0}").format(
       filename), STATUS_BAR_TIMEOUT)
 
-  def export_epub(self):
+  def exportEpub(self):
     filename = QtGui.QFileDialog.getSaveFileName(self, self.tr("Save file"),
         "", "Epub files (*.epub)")
 
@@ -283,14 +285,14 @@ class MainWindow(QtGui.QMainWindow):
     title, _ = QtGui.QInputDialog.getText(self, self.tr("Title"), self.tr(
       "Title of the epub file"))
 
-    words_list = self._get_words()
-    epub_converter.convert(words_list, title, filename)
+    wordsList = self._getWords()
+    epub_converter.convert(wordsList, title, filename)
 
     self.statusBar().showMessage(self.tr("Exported successfully to {0}").format(
       filename), STATUS_BAR_TIMEOUT)
 
   def save(self):
-    words = self._get_words()
+    words = self._getWords()
     result = [TEMPLATE_CSV.format(word1 = word, word2 = translation) 
       for word, translation in words]
 
@@ -305,18 +307,18 @@ class MainWindow(QtGui.QMainWindow):
 
     print("Successfully wrote words to {0}".format(filename))
 
-  def show_about_dialog(self):
+  def showAboutDialog(self):
     with open('LICENSE', 'r') as f:
       license = f.read()
-    about_dialog = AboutDialog.AboutDialog(license, self)
-    about_dialog.exec_()
+    aboutDialog = AboutDialog.AboutDialog(license, self)
+    aboutDialog.exec_()
 
-  def show_preferences_dialog(self):
-    preferences_dialog = PreferencesDialog.PreferencesDialog(self.configuration,
+  def showPreferencesDialog(self):
+    preferencesDialog = PreferencesDialog.PreferencesDialog(self.configuration,
         self, "")
-    preferences_dialog.exec_()
+    preferencesDialog.exec_()
 
-  def download_audios(self,
+  def downloadAudios(self,
       url = 'http://ubuntuone.com/30FlazWAzqPCmlebqNwiXZ'): 
     dirname = QtGui.QFileDialog.getExistingDirectory(self,
         self.tr("Directory for the sounds"))
@@ -324,7 +326,7 @@ class MainWindow(QtGui.QMainWindow):
     if dirname == '': 
       return
 
-    result_filename = "{0}/{1}.zip".format(dirname, uuid.uuid4().hex)
+    resultFilename = "{0}/{1}.zip".format(dirname, uuid.uuid4().hex)
 
     self.statusBar().showMessage(self.tr("Connecting to the server"))
     zipFileDownloader = ZipFileDownloader(url, dirname)
@@ -337,14 +339,14 @@ class MainWindow(QtGui.QMainWindow):
   def updateStatusBarWithTimeout(self, message, timeout=0):
     self.statusBar().showMessage(message)
 
-  def download_audios_custom_url(self):
+  def downloadAudiosCustomUrl(self):
     url = QtGui.QInputDialog.getText(self, self.tr("Url"),
         self.tr("The url to use for audio files"))
 
     if url == '':
       QtGui.QMessageBox(self.tr("Aborting as no url was provided"))
 
-    self.download_audios(url)
+    self.downloadAudios(url)
 
 class ExecutionStatus(QtCore.QObject):
   newValue = QtCore.pyqtSignal(str, int)
@@ -358,22 +360,22 @@ class ZipFileDownloader(QtCore.QRunnable):
     self.dirname = dirname
 
   def run(self): 
-    result_filename = "{0}/{1}.zip".format(self.dirname, uuid.uuid4().hex)
-    self._download_file(self.url, result_filename)
-    self._unpack_file_to_dir(result_filename)
+    resultFilename = "{0}/{1}.zip".format(self.dirname, uuid.uuid4().hex)
+    self._downloadFile(self.url, resultFilename)
+    self._unpackFileToDir(resultFilename)
 
   def _tr(self, text):
     return QtCore.QCoreApplication.translate("ZipFileDownloader", text)
 
-  def _download_file(self, url, result_filename):
-    read_size = 65507
+  def _downloadFile(self, url, resultFilename):
+    readSize = 65507
 
-    with urllib.request.urlopen(url) as web_file:
-      file_size = int(web_file.info()['Content-Length'])
+    with urllib.request.urlopen(url) as webFile:
+      fileSize = int(webFile.info()['Content-Length'])
       downloaded = 0
-      with open(result_filename, 'wb') as fout:
+      with open(resultFilename, 'wb') as fout:
         while(True):
-          buf = web_file.read(read_size)
+          buf = webFile.read(readSize)
           if not buf:
             break
 
@@ -382,16 +384,16 @@ class ZipFileDownloader(QtCore.QRunnable):
 
           self.executionStatus.newValue.emit(
               self._tr("Downloaded {} KB of {} KB".format(downloaded // 1024,
-                  file_size // 1024)), 0)
+                  fileSize // 1024)), 0)
 
     self.executionStatus.newValue.emit(self._tr("Download completed"),
         STATUS_BAR_TIMEOUT)
 
-  def _unpack_file_to_dir(self, result_filename):
+  def _unpackFileToDir(self, resultFilename):
     self.executionStatus.newValue.emit(
         self._tr("Unpacking files, please wait"), 0)
 
-    with zipfile.ZipFile(result_filename) as zf:
+    with zipfile.ZipFile(resultFilename) as zf:
       zf.extractall(self.dirname)
 
     self.executionStatus.newValue.emit(self._tr("Unpacking finished"),

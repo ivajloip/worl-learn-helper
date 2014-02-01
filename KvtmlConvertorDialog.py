@@ -48,138 +48,138 @@ class KvtmlConvertorDialog(QtGui.QDialog):
     super(KvtmlConvertorDialog, self).__init__(parent)
     self.words = words
 
-    self.use_sound_checkbox = QtGui.QCheckBox(self)
-    self.use_sound_checkbox.setChecked(True)
+    self.useSoundCheckbox = QtGui.QCheckBox(self)
+    self.useSoundCheckbox.setChecked(True)
     self.layout = QtGui.QFormLayout()
-    self.layout.addRow(self.tr("Sound"), self.use_sound_checkbox)
+    self.layout.addRow(self.tr('Sound'), self.useSoundCheckbox)
 
-    self.sound_directory_widget = FileSelector.FileSelector(
-        self.tr("Choose..."), configuration.sound_directory, self)
+    self.soundDirectoryWidget = FileSelector.FileSelector(
+        self.tr('Choose...'), configuration.soundDirectory, self)
 
-    self.layout.addRow(self.tr("Sound Directory"), self.sound_directory_widget)
+    self.layout.addRow(self.tr("Sound Directory"), self.soundDirectoryWidget)
 
-    self.title_input = QtGui.QLineEdit(self)
-    self.layout.addRow(self.tr("Title"), self.title_input)
+    self.titleInput = QtGui.QLineEdit(self)
+    self.layout.addRow(self.tr('Title'), self.titleInput)
 
-    self.use_sound_checkbox.stateChanged.connect(self.use_sound_state_change)
-    self.finish_button = QtGui.QPushButton(self.tr("Finish"), self)
-    self.finish_button.setEnabled(
-        self.sound_directory_widget.get_directory() != '')
-    self.finish_button.clicked.connect(self.finish_button_clicked)
+    self.useSoundCheckbox.stateChanged.connect(self.useSoundStateChange)
+    self.finishButton = QtGui.QPushButton(self.tr('Finish'), self)
+    self.finishButton.setEnabled(
+        self.soundDirectoryWidget.getDirectory() != '')
+    self.finishButton.clicked.connect(self.finishButtonClicked)
 
-    self.layout.addRow(self.tr(""), self.finish_button)
+    self.layout.addRow(self.tr(''), self.finishButton)
     self.setLayout(self.layout)
 
-  def use_sound_state_change(self):
-    state = self.use_sound_checkbox.isChecked()
+  def useSoundStateChange(self):
+    state = self.useSoundCheckbox.isChecked()
 
-    sound_directory_path = self.sound_directory_widget.get_directory()
+    soundDirectoryPath = self.soundDirectoryWidget.getDirectory()
 
-    self.finish_button.setEnabled(not(state) or sound_directory_path != '')
+    self.finishButton.setEnabled(not(state) or soundDirectoryPath != '')
 
-  def finish_button_clicked(self): 
-    result_filename = QtGui.QFileDialog.getSaveFileName(self,
-        self.tr("Save file"), "", "Kvtml files (*.kvtml)")
+  def finishButtonClicked(self): 
+    resultFilename = QtGui.QFileDialog.getSaveFileName(self,
+        self.tr('Save file'), '', 'Kvtml files (*.kvtml)')
 
-    if result_filename == '':
+    if resultFilename == '':
       return
 
-    french_audio = self.map_audio_files()
+    frenchAudio = self.mapAudioFiles()
 
-    words_data = [(self.words[index][0], self.words[index][1],
-      french_audio[index], index) for index in range(len(self.words))]
+    wordsData = [(self.words[index][0], self.words[index][1],
+      frenchAudio[index], index) for index in range(len(self.words))]
 
-    title = self.title_input.text()
+    title = self.titleInput.text()
 
-    self.write_to_kvtml(words_data, result_filename, title)
+    self.writeToKvtml(wordsData, resultFilename, title)
 
     QtGui.QMessageBox.information(self, self.tr("Export successful"),
         self.tr("The words were successfully saved to {0}").format(
-          result_filename))
+          resultFilename))
     self.accept()
 
-  def has_common_word(self, phrase, audio):
-    skip_words = ['une', 'un', 'le', 'la', 'les', 'de', 'des', 'du', 'se', 'e',
+  def hasCommonWord(self, phrase, audio):
+    skipWords = ['une', 'un', 'le', 'la', 'les', 'de', 'des', 'du', 'se', 'e',
         'à', 'et', 'ou']
-    return any([_ not in skip_words and audio.find(_) >= 0
+    return any([_ not in skipWords and audio.find(_) >= 0
       for _ in phrase.split(' ')])
 
-  def search_for_audio(self):
-    return self.use_sound_checkbox.isChecked()
+  def searchForAudio(self):
+    return self.useSoundCheckbox.isChecked()
 
-  def find_audio_file(self, phrase, files, extension = '.flac'):
-    if not self.search_for_audio():
+  def findAudioFile(self, phrase, files, extension = '.flac'):
+    if not self.searchForAudio():
       return None
 
-    basedir = self.sound_directory_widget.get_directory() + '/'
+    basedir = self.soundDirectoryWidget.getDirectory() + '/'
     phrase = phrase.lower()
-    complete_match = [_ for _ in files if _ == phrase + extension]
+    completeMatch = [_ for _ in files if _ == phrase + extension]
 
-    if len(complete_match) > 0: 
+    if len(completeMatch) > 0: 
       print("Found complete match for {0}".format(phrase))
-      return basedir + complete_match[0]
+      return basedir + completeMatch[0]
 
-    partial_match = files
+    partialMatch = files
 
     # sometimes some small words attached to bigger ones can prevent the bigger
     # ones from being recongnized
     phrase = re.sub('[dls][\'`]', '', phrase)
 
     for word in phrase.split(' '):
-      partial_match = [_ for _ in partial_match if _.find(word) >= 0]
+      partialMatch = [_ for _ in partialMatch if _.find(word) >= 0]
 
-    if len(partial_match) == 0:
-      partial_match = [_ for _ in files if self.has_common_word(phrase, _)]
+    if len(partialMatch) == 0:
+      partialMatch = [_ for _ in files if self.hasCommonWord(phrase, _)]
 
-    partial_match = partial_match[:10]
+    partialMatch = partialMatch[:10]
 
-    options_count = len(partial_match)
-    if options_count == 0:
+    optionsCount = len(partialMatch)
+    if optionsCount == 0:
       return None
-    elif options_count == 1:
-      return basedir + partial_match[0]
+    elif optionsCount == 1:
+      return basedir + partialMatch[0]
 
     title = self.tr("Select audio file to use")
     label = self.tr("For {0}").format(phrase)
-    option_to_use = QtGui.QInputDialog.getItem(self, title, label,
-        partial_match, 0, False)
+    optionToUse = QtGui.QInputDialog.getItem(self, title, label,
+        partialMatch, 0, False)
 
-    if not option_to_use[1]:
+    if not optionToUse[1]:
       return None
 
-    return basedir + option_to_use[0]
+    return basedir + optionToUse[0]
 
-  def map_audio_files(self):
-    if not self.search_for_audio():
+  def mapAudioFiles(self):
+    if not self.searchForAudio():
       return [None for _ in self.words]
 
-    files = os.listdir(self.sound_directory_widget.get_directory())
+    files = os.listdir(self.soundDirectoryWidget.getDirectory())
 
-    return [self.find_audio_file(word[0], files) for word in self.words]
+    return [self.findAudioFile(word[0], files) for word in self.words]
 
-  def format_sound(self, sound_file):
-    if sound_file == None:
+  def formatSound(self, soundFile):
+    if soundFile == None:
       return ''
 
-    return TEMPLATE_SOUND.format(sound = sound_file)
+    return TEMPLATE_SOUND.format(sound = soundFile)
 
-  def get_formatted_date(self, ):
+  def getFormattedDate(self, ):
     now = time.localtime()
 
     return "{year}-{month}-{day}".format(
         year=now.tm_year, month=now.tm_mon, day=now.tm_mday)
 
-  def write_to_file(self, filename, data):
+  def writeToFile(self, filename, data):
     with open(filename, 'w') as f:
       f.writelines(data)
 
-  def write_to_kvtml(self, words_list, filename, title):
-    entries_str = "\n".join([TEMPLATE_KVTML_ENTRY.format(
-      index=_[3], word=_[0], translation=_[1], sound1=self.format_sound(_[2]))
-      for _ in words_list])
+  def writeToKvtml(self, wordsList, filename, title):
+    entriesStr = "\n".join([TEMPLATE_KVTML_ENTRY.format(
+      index=_[3], word=_[0], translation=_[1], sound1=self.formatSound(_[2]))
+      for _ in wordsList])
 
-    resulting_kvtml = TEMPLATE_KVTML.format(title=title, entries=entries_str,
-        date=self.get_formatted_date())
+    resultingKvtml = TEMPLATE_KVTML.format(title=title, entries=entriesStr,
+        date=self.getFormattedDate())
 
-    self.write_to_file(filename, resulting_kvtml)
+    self.writeToFile(filename, resultingKvtml)
 

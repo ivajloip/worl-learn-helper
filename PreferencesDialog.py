@@ -19,60 +19,60 @@ class Config:
   def read(self, path):
     if os.path.exists(path):
       with open(path) as f:
-        conf_as_dict = json.load(f)
+        confAsDict = json.load(f)
     else:
-      conf_as_dict = {'config_file_path': CONFIG_FILE_PATH,
+      confAsDict = {'config_file_path': CONFIG_FILE_PATH,
           'sound_directory': ''}
 
-    self.config_file_path = conf_as_dict['config_file_path']
-    self.sound_directory = conf_as_dict['sound_directory']
+    self.configFilePath = confAsDict['config_file_path']
+    self.soundDirectory = confAsDict['sound_directory']
 
-  def to_dict(self):
-    return {'config_file_path': self.config_file_path,
-      'sound_directory': self.sound_directory}
+  def toDict(self):
+    return {'config_file_path': self.configFilePath,
+      'sound_directory': self.soundDirectory}
 
   def write(self, path = None):
     if path == None:
-      path = self.config_file_path
+      path = self.configFilePath
 
-    path_dir = os.path.dirname(path)
-    if not os.path.exists(path_dir):
-      os.makedirs(path_dir)
+    pathDir = os.path.dirname(path)
+    if not os.path.exists(pathDir):
+      os.makedirs(pathDir)
 
     with open(path, 'w') as f:
-      json.dump(self.to_dict(), f, indent=4, separators=(',', ': '))
+      json.dump(self.toDict(), f, indent=4, separators=(',', ': '))
 
     print("Configuration writing finished")
 
 class PreferencesDialog(QtGui.QDialog):
 
-  def __init__(self, configuration, parent = None, config_file = CONFIG_FILE_PATH):
+  def __init__(self, configuration, parent = None, configFile = CONFIG_FILE_PATH):
     super(PreferencesDialog, self).__init__(parent)
     self.setWindowTitle(self.tr('Preferences'))
 
     self.layout = QtGui.QFormLayout()
-    self.sound_directory_widget = FileSelector.FileSelector(
-        self.tr("Choose..."), configuration.sound_directory, self)
-    self.layout.addRow(self.tr("Sound Directory"), self.sound_directory_widget)
+    self.soundDirectoryWidget = FileSelector.FileSelector(
+        self.tr("Choose..."), configuration.soundDirectory, self)
+    self.layout.addRow(self.tr("Sound Directory"), self.soundDirectoryWidget)
 
     self.setLayout(self.layout)
 
-    ok_button = QtGui.QPushButton(self.tr('&Ok'), self)
-    close_button = QtGui.QPushButton(self.tr('&Close'), self)
-    self.layout.addRow(close_button, ok_button)
+    okButton = QtGui.QPushButton(self.tr('&Ok'), self)
+    closeButton = QtGui.QPushButton(self.tr('&Close'), self)
+    self.layout.addRow(closeButton, okButton)
 
-    ok_button.clicked.connect(self.ok_button_clicked)
-    close_button.clicked.connect(self.close_button_clicked)
+    okButton.clicked.connect(self.okButtonClicked)
+    closeButton.clicked.connect(self.closeButtonClicked)
 
     self.configuration = configuration
 
-  def ok_button_clicked(self):
-    self.configuration.sound_directory = (
-        self.sound_directory_widget.get_directory())
+  def okButtonClicked(self):
+    self.configuration.soundDirectory = (
+        self.soundDirectoryWidget.getDirectory())
 
     self.configuration.write()
     
     self.accept()
 
-  def close_button_clicked(self):
+  def closeButtonClicked(self):
     self.reject()

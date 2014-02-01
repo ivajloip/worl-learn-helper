@@ -13,11 +13,11 @@ class AboutDialog(QtGui.QDialog):
     text.setReadOnly(True)
     text.setText(message)
 
-    ok_button = QtGui.QPushButton(self.tr('Ok'), self)
-    ok_button.clicked.connect(self.ok_button_clicked)
+    okButton = QtGui.QPushButton(self.tr('Ok'), self)
+    okButton.clicked.connect(self.okButtonClicked)
 
     layout.addWidget(text)
-    layout.addWidget(ok_button)
+    layout.addWidget(okButton)
 
-  def ok_button_clicked(self):
+  def okButtonClicked(self):
     self.accept()

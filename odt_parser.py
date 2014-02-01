@@ -37,16 +37,16 @@ ODF_NAMESPACES = {
   'xml': 'http://www.w3.org/XML/1998/namespace'
   } 
 
-def get_words(file_obj):
-  tree = etree.parse(file_obj)
+def getWords(fileObj):
+  tree = etree.parse(fileObj)
   root = tree.getroot()
   table = root.find('.//table:table', ODF_NAMESPACES)
 
   rows = table.findall('.//table:table-row/', ODF_NAMESPACES)
-  rows_text = [re.sub('  +', ' ', ' '.join(_.itertext())) for _ in rows]
+  rowsText = [re.sub('  +', ' ', ' '.join(_.itertext())) for _ in rows]
 
-  return zip(rows_text[::2], rows_text[1::2])
+  return zip(rowsText[::2], rowsText[1::2])
 
-def parse_odt(filepath):
-  with zipfile.ZipFile(filepath) as odt_file:
-    return get_words(odt_file.open('content.xml'))
+def parseOdt(filepath):
+  with zipfile.ZipFile(filepath) as odtFile:
+    return getWords(odtFile.open('content.xml'))

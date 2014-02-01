@@ -39,18 +39,18 @@ nsprefixes = {
     'dcmitype': 'http://purl.org/dc/dcmitype/',
     'dcterms': 'http://purl.org/dc/terms/'}
 
-def get_words(file_obj):
-  tree = etree.parse(file_obj)
+def getWords(fileObj):
+  tree = etree.parse(fileObj)
   root = tree.getroot()
   table = root.find('.//w:tbl', nsprefixes)
 
   rows = table.findall('.//w:tr/', nsprefixes)
-  rows_text = [re.sub('  +', ' ', ' '.join(_.itertext())) for _ in rows]
-  rows_text = [_ for _ in rows_text if _ != '']
+  rowsText = [re.sub('  +', ' ', ' '.join(_.itertext())) for _ in rows]
+  rowsText = [_ for _ in rowsText if _ != '']
 
   # The indexes remove the header of the table, which is not needed any way :)
-  return zip(rows_text[3::2], rows_text[4::2])
+  return zip(rowsText[3::2], rowsText[4::2])
 
-def parse_docx(filepath):
-  with zipfile.ZipFile(filepath) as docx_file:
-    return get_words(docx_file.open('word/document.xml'))
+def parseDocx(filepath):
+  with zipfile.ZipFile(filepath) as docxFile:
+    return getWords(docxFile.open('word/document.xml'))

@@ -17,8 +17,8 @@ class WordDefinition(QtGui.QWidget):
     self.word.setMinimumWidth(200)
     self.translation = QtGui.QLineEdit(self)
     self.translation.setMinimumWidth(200)
-    self.delete_button = QtGui.QPushButton(self)
-    self.delete_button.setIcon(QtGui.QIcon('icons/delete.png'))
+    self.deleteButton = QtGui.QPushButton(self)
+    self.deleteButton.setIcon(QtGui.QIcon('icons/delete.png'))
     self.moveUpButton = QtGui.QPushButton(self)
     self.moveUpButton.setIcon(QtGui.QIcon('icons/up.jpg'))
     self.moveUpButton.setEnabled(moveUpEnabled)
@@ -28,11 +28,11 @@ class WordDefinition(QtGui.QWidget):
 
     layout.addWidget(self.word)
     layout.addWidget(self.translation)
-    layout.addWidget(self.delete_button)
+    layout.addWidget(self.deleteButton)
     layout.addWidget(self.moveUpButton)
     layout.addWidget(self.moveDownButton)
 
-    self.delete_button.clicked.connect(self._deleteClicked)
+    self.deleteButton.clicked.connect(self._deleteClicked)
     self.moveUpButton.clicked.connect(self._moveUpClicked)
     self.moveDownButton.clicked.connect(self._moveDownClicked)
 
