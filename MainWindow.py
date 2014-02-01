@@ -157,11 +157,21 @@ class MainWindow(QtGui.QMainWindow):
     size =  self.geometry()
     self.move((screen.width()-size.width())/2, (screen.height()-size.height())/2)  
 
-  def createInputBox(self, layout):
-    newWordDefinition = WordDefinition.WordDefinition(self)
+  def createInputBox(self, layout, moveUpEnabled, moveDownEnabled):
+    newWordDefinition = WordDefinition.WordDefinition(moveUpEnabled,
+        moveDownEnabled, self)
     layout.addWidget(newWordDefinition)
 
     return newWordDefinition
+
+  def _swapWords(self, firstWordIndex, secondWordIndex):
+    words = self._get_words()
+
+    tmp = words[firstWordIndex]
+    words[firstWordIndex] = words[secondWordIndex]
+    words[secondWordIndex] = tmp
+
+    self._update_word_pairs(words, firstWordIndex, secondWordIndex + 1)
 
   def _deleteWord(self, number):
     words = self._get_words()
@@ -171,10 +181,12 @@ class MainWindow(QtGui.QMainWindow):
   def createInputBoxes(self, layout, count):
     self.input_boxes = []
     for _ in range(count):
-      input_box = self.createInputBox(layout)
+      input_box = self.createInputBox(layout, _ != 0, _ != count - 1)
       self.input_boxes.append(input_box)
 
       input_box.deleteClicked.connect(functools.partial(self._deleteWord, _))
+      input_box.moveUp.connect(functools.partial(self._swapWords, _ - 1, _))
+      input_box.moveDown.connect(functools.partial(self._swapWords, _, _ + 1))
 
   def parse_csv(self, filename):
     with open(filename) as fin:
