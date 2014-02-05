@@ -61,7 +61,7 @@ class MainWindow(QtGui.QMainWindow):
 #       creates the window with the title and icon
     super(MainWindow, self).__init__()
     self.resize(450, 360)
-    self.setWindowTitle('Word Learning Helper')
+    self.setWindowTitle(self.tr('Word Learning Helper'))
     self.statusBar()
 
     self.pool = QtCore.QThreadPool()
@@ -104,11 +104,11 @@ class MainWindow(QtGui.QMainWindow):
     layout.addWidget(titleWidget)
 
   def _createMenuItem(self, label, iconLocation, shortCut, statusTip, func, addTo):
-    tmp = QtGui.QAction(QtGui.QIcon(iconLocation), label, self)
-    tmp.setShortcut(shortCut)
-    tmp.setStatusTip(statusTip)
-    self.connect(tmp, QtCore.SIGNAL('triggered()'), func)
-    addTo.addAction(tmp)       
+    newActoin = QtGui.QAction(QtGui.QIcon(iconLocation), self.tr(label), self)
+    newActoin.setShortcut(shortCut)
+    newActoin.setStatusTip(self.tr(statusTip))
+    self.connect(newActoin, QtCore.SIGNAL('triggered()'), func)
+    addTo.addAction(newActoin)       
 
   def _createMenuBar(self):
     menubar = self.menuBar()
@@ -212,10 +212,10 @@ class MainWindow(QtGui.QMainWindow):
     return list(zip(frenchWords, bulgarianWords))
 
   def _open(self):
-    parsers = {"Html files (*.html *.xhtml)": self.parseHtml,
-        "Odt files (*.odt)": odt_parser.parseOdt,
-        "Csv files (*.csv)": self.parseCsv,
-        "Docx files (*.docx)": docx_parser.parseDocx}
+    parsers = {self.tr("Html files (*.html *.xhtml)"): self.parseHtml,
+        self.tr("Odt files (*.odt)"): odt_parser.parseOdt,
+        self.tr("Csv files (*.csv)"): self.parseCsv,
+        self.tr("Docx files (*.docx)"): docx_parser.parseDocx}
 
     filters = list(parsers.keys())
     filters.sort()
@@ -254,7 +254,7 @@ class MainWindow(QtGui.QMainWindow):
 
   def exportHtml(self):
     filename = QtGui.QFileDialog.getSaveFileName(self, self.tr("Save file"),
-        "", "Html files (*.html)")
+        "", self.tr("Html files (*.html)"))
 
     if filename == '':
       return
@@ -277,7 +277,7 @@ class MainWindow(QtGui.QMainWindow):
 
   def exportEpub(self):
     filename = QtGui.QFileDialog.getSaveFileName(self, self.tr("Save file"),
-        "", "Epub files (*.epub)")
+        "", self.tr("Epub files (*.epub)"))
 
     if filename == '':
       return
@@ -297,7 +297,7 @@ class MainWindow(QtGui.QMainWindow):
       for word, translation in words]
 
     filename = QtGui.QFileDialog.getSaveFileName(self, self.tr("Save file"),
-        "", "Comma separated values files (*.csv)")
+        "", self.tr("Comma separated values files (*.csv)"))
     
     if filename == '': 
       return
