@@ -13,6 +13,7 @@ import KvtmlConvertorDialog
 import AboutDialog
 import PreferencesDialog
 import WordDefinition
+import SaveDialog
 import odt_parser
 import docx_parser
 
@@ -253,7 +254,7 @@ class MainWindow(QtGui.QMainWindow):
     converterDialog.exec_()
 
   def exportHtml(self):
-    filename = QtGui.QFileDialog.getSaveFileName(self, self.tr("Save file"),
+    filename = SaveDialog.SaveDialog.getSaveFileName(self, self.tr("Save file"),
         "", self.tr("Html files (*.html)"))
 
     if filename == '':
@@ -276,7 +277,7 @@ class MainWindow(QtGui.QMainWindow):
       filename), STATUS_BAR_TIMEOUT)
 
   def exportEpub(self):
-    filename = QtGui.QFileDialog.getSaveFileName(self, self.tr("Save file"),
+    filename = SaveDialog.SaveDialog.getSaveFileName(self, self.tr("Save file"),
         "", self.tr("Epub files (*.epub)"))
 
     if filename == '':
@@ -296,7 +297,7 @@ class MainWindow(QtGui.QMainWindow):
     result = [TEMPLATE_CSV.format(word1 = word, word2 = translation) 
       for word, translation in words]
 
-    filename = QtGui.QFileDialog.getSaveFileName(self, self.tr("Save file"),
+    filename = SaveDialog.SaveDialog.getSaveFileName(self, self.tr("Save file"),
         "", self.tr("Comma separated values files (*.csv)"))
     
     if filename == '': 
