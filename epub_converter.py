@@ -7,7 +7,7 @@ import zipfile
 TEMPLATES_DIR = 'epub'
 
 def read_template(filename):
-  with open(filename) as f:
+  with open(filename, encoding='utf-8') as f:
     template = f.read()
 
   return template

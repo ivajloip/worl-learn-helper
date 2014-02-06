@@ -61,7 +61,7 @@ class MainWindow(QtGui.QMainWindow):
   def __init__(self, use_local = True):
 #       creates the window with the title and icon
     super(MainWindow, self).__init__()
-    self.resize(450, 360)
+    self.resize(600, 360)
     self.setWindowTitle(self.tr('Word Learning Helper'))
     self.statusBar()
 
@@ -192,7 +192,7 @@ class MainWindow(QtGui.QMainWindow):
       inputBox.moveDown.connect(functools.partial(self._swapWords, _, _ + 1))
 
   def parseCsv(self, filename):
-    with open(filename) as fin:
+    with open(filename, encoding='utf-8') as fin:
       lines = fin.readlines()
 
     wordPairs = [line[1:-2].split('", "') for line in lines]
@@ -200,7 +200,7 @@ class MainWindow(QtGui.QMainWindow):
     return wordPairs
 
   def parseHtml(self, filename):
-    with open(filename) as f:
+    with open(filename, encoding='utf-8') as f:
       lines = f.readlines()
 
     lines = lines[17:-3]
@@ -310,7 +310,7 @@ class MainWindow(QtGui.QMainWindow):
       filename), STATUS_BAR_TIMEOUT)
 
   def showAboutDialog(self):
-    with open('LICENSE', 'r') as f:
+    with open('LICENSE', 'r', encoding='utf-8') as f:
       license = f.read()
     aboutDialog = AboutDialog.AboutDialog(license, self)
     aboutDialog.exec_()

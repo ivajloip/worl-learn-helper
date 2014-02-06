@@ -18,7 +18,7 @@ class Config:
 
   def read(self, path):
     if os.path.exists(path):
-      with open(path) as f:
+      with open(path, encoding='utf-8') as f:
         confAsDict = json.load(f)
     else:
       confAsDict = {'config_file_path': CONFIG_FILE_PATH,
