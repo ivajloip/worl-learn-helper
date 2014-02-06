@@ -306,7 +306,8 @@ class MainWindow(QtGui.QMainWindow):
     with open(filename, 'w', encoding='utf-8') as f:
       f.writelines(result)
 
-    print("Successfully wrote words to {0}".format(filename))
+    self.statusBar().showMessage(self.tr("Saved successfully to {0}").format(
+      filename), STATUS_BAR_TIMEOUT)
 
   def showAboutDialog(self):
     with open('LICENSE', 'r') as f:
