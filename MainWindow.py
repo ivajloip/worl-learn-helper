@@ -270,7 +270,7 @@ class MainWindow(QtGui.QMainWindow):
 
     resultingHtml = TEMPLATE_HTML.format(title=title, entries=entriesStr)
 
-    with open(filename, 'w') as f:
+    with open(filename, 'w', encoding='utf-8') as f:
       f.writelines(resultingHtml)
 
     self.statusBar().showMessage(self.tr("Exported successfully to {0}").format(
@@ -303,7 +303,7 @@ class MainWindow(QtGui.QMainWindow):
     if filename == '': 
       return
 
-    with open(filename, 'w') as f:
+    with open(filename, 'w', encoding='utf-8') as f:
       f.writelines(result)
 
     print("Successfully wrote words to {0}".format(filename))

@@ -39,7 +39,7 @@ class Config:
     if not os.path.exists(pathDir):
       os.makedirs(pathDir)
 
-    with open(path, 'w') as f:
+    with open(path, 'w', encoding='utf-8') as f:
       json.dump(self.toDict(), f, indent=4, separators=(',', ': '))
 
     print("Configuration writing finished")

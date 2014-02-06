@@ -18,7 +18,7 @@ TOC_TEMPLATE = read_template(TEMPLATES_DIR + '/toc.ncx')
 CONTENT_TEMPLATE = read_template(TEMPLATES_DIR + '/content.opf')
 
 def writeToFile(basedir, filename, data):
-  with open(basedir + '/' + filename, 'w') as f:
+  with open(basedir + '/' + filename, 'w', encoding='utf-8') as f:
     f.write(data)
 
 def writeToEpub(basedir, filename, files):

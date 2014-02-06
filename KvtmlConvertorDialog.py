@@ -170,7 +170,7 @@ class KvtmlConvertorDialog(QtGui.QDialog):
         year=now.tm_year, month=now.tm_mon, day=now.tm_mday)
 
   def writeToFile(self, filename, data):
-    with open(filename, 'w') as f:
+    with open(filename, 'w', encoding='utf-8') as f:
       f.writelines(data)
 
   def writeToKvtml(self, wordsList, filename, title):
