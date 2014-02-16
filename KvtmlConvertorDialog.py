@@ -1,6 +1,8 @@
 import time
 import os
 import re
+
+import SaveDialog
 import FileSelector
 
 from PyQt4 import QtCore, QtGui
@@ -78,7 +80,7 @@ class KvtmlConvertorDialog(QtGui.QDialog):
     self.finishButton.setEnabled(not(state) or soundDirectoryPath != '')
 
   def finishButtonClicked(self): 
-    resultFilename = QtGui.QFileDialog.getSaveFileName(self,
+    resultFilename = SaveDialog.SaveDialog.getSaveFileName(self,
         self.tr('Save file'), '', 'Kvtml files (*.kvtml)')
 
     if resultFilename == '':
@@ -98,11 +100,21 @@ class KvtmlConvertorDialog(QtGui.QDialog):
           resultFilename))
     self.accept()
 
-  def hasCommonWord(self, phrase, audio):
-    skipWords = ['une', 'un', 'le', 'la', 'les', 'de', 'des', 'du', 'se', 'e',
-        'à', 'et', 'ou']
-    return any([_ not in skipWords and audio.find(_) >= 0
-      for _ in phrase.split(' ')])
+  def countCommonWords(self, phrase, audio):
+    skipWords = set(['une', 'un', 'le', 'la', 'les', 'de', 'des', 'du', 'se',
+      'e', 'à', 'et', 'ou', 'en', 'au'])
+
+    common_words =  sum([(1 - (_ in skipWords) * 0.9)
+      for _ in set(phrase.split(' '))
+      if re.match('\\b{}\\b'.format(_), audio)])
+
+    small_words = len([_ for _ in audio.split(' ') + phrase.split(' ')
+      if _ in skipWords])
+
+    all_words = len(audio.split(' ')) + len(phrase.split(' ')) 
+    extra_words = all_words - 2 * common_words
+
+    return common_words - 0.2 * extra_words + 0.1 * small_words
 
   def searchForAudio(self):
     return self.useSoundCheckbox.isChecked()
@@ -123,20 +135,38 @@ class KvtmlConvertorDialog(QtGui.QDialog):
 
     # sometimes some small words attached to bigger ones can prevent the bigger
     # ones from being recongnized
-    phrase = re.sub('[dls][\'`]', '', phrase)
+    phrase = re.sub('[dls][\'`’]|,\s+\w+$|\s*=.+$', '', phrase)
+    phrase = phrase.replace(',', ' ')
+    phrase = phrase.strip()
 
-    for word in phrase.split(' '):
-      partialMatch = [_ for _ in partialMatch if _.find(word) >= 0]
+    words_with_counts = [(audio, self.countCommonWords(phrase, audio))
+        for audio in files]
+    best_match = max(words_with_counts, key=lambda pair: pair[1])
 
-    if len(partialMatch) == 0:
-      partialMatch = [_ for _ in files if self.hasCommonWord(phrase, _)]
+    print("The best matching word has {} common words with {}".format(
+      best_match[1], phrase))
 
-    partialMatch = partialMatch[:10]
-
-    optionsCount = len(partialMatch)
-    if optionsCount == 0:
+    if best_match[1] < 0.6:
       return None
-    elif optionsCount == 1:
+
+    best_word_matchings = sorted([pair for pair in words_with_counts
+      if pair[1] >= 0.5 * best_match[1]],
+      key=lambda pair: pair[1], reverse=True)
+
+    print(best_word_matchings)
+
+    #for word in phrase.split(' '):
+      #partialMatch = [_ for _ in partialMatch
+          #if re.match('\\b{}\\b'.format(word), _)]
+
+    #if len(partialMatch) == 0:
+      #partialMatch = [_ for _ in files if self.hasCommonWord(phrase, _)]
+
+    partialMatch = [word_with_count[0]
+        for word_with_count in best_word_matchings[:16]
+        if word_with_count[1] > 0.5]
+
+    if len(partialMatch) == 1:
       return basedir + partialMatch[0]
 
     title = self.tr("Select audio file to use")
